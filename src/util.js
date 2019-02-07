@@ -7,6 +7,14 @@ function isObject (value) {
   return notNil(value) && typeof value === 'object' && value.constructor === Object
 }
 
+function nil (value) {
+  return value === undefined || value === null
+}
+
+function notNil (value) {
+  return !nil(value)
+}
+
 function empty (value) {
   if (nil(value)) {
     return true
@@ -61,7 +69,7 @@ function assertValidOptions (options, validOptionTypes) {
 				)}`
 			);
 		}
-		if (actualType !== expectedType) {
+		if (expectedType !== 'any' && actualType !== expectedType) {
 			throw new Error(
 				`Type of options key ${key} is ${actualType} but needs to be ${expectedType}`
 			)

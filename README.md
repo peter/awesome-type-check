@@ -2,15 +2,52 @@
 
 Runtime type checks / schema validation for JavaScript objects and values.
 
+## Use Cases for this Library
+
+* Form and model validation
+* Type checking options objects and other function arguments
+* Validating types of properties passed to React components
+* Ability to generate API documentation from types. Types are just data structures with validation functions
+
+## Installation
+
+```
+npm install awesome-type-check
+```
+
 ## Usage
 
 ```javascript
-const {ObjectType} = require('')
-const type = 
+const {typeError, ObjectType, StringType, Enum} = require('awesome-type-check')
+
+const Username = StringType({minLength: 3, maxLength: 50, pattern: /^[a-z0-9_-]+$/})
+
+const User = ObjectType(
+  {
+    name: 'string',
+    username: Username,
+    status: Enum('active', 'inactive')
+  },
+  {requiredKeys: ['username']}
+)
+
+const error = typeError(User, {name: 'Joe', username: 'j', status: 'foobar'})
+
+if (error) {
+  console.log('user is not valid, error:', error)
+  // => user is not valid, error: {
+  //      username: 'must be at least 3 characters long but was only 1 characters',
+  //      status: 'has value "foobar" (type string) but must be one of these values: active, inactive'
+  //    }
+} else {
+  console.log('user is valid')
+}
 ```
 
 ## TODO
 
+* Use custom typeOf similar to what the kind-of package does, put it in type-of.js
+* assertType(value, type)
 * TypeScript
 * Linting
 * Jest
@@ -21,7 +58,8 @@ const type =
 * Integer type with min/max
 * Enum type
 * Tuple type (Array with items array and minLength/maxLenth?)
-* Use custom typeOf similar to what the kind-of package does?
+* Syntactic sugar to mark object property type required?
+* JSON Schema adapater (toJsonSchema, fromJsonSChema)
 
 ## Resources
 
@@ -30,3 +68,5 @@ const type =
 * [type_spec - Runtime Type Checks in Python](https://github.com/peter/type_spec)
 * [Understanding JSON Schema](https://json-schema.org/understanding-json-schema)
 * [kind-of - Check Type of Value in JavaScript](https://github.com/jonschlinkert/kind-of)
+* [Clojure Spec](https://clojure.org/guides/spec)
+* [Active Record Validations](https://guides.rubyonrails.org/active_record_validations.html)

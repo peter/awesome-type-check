@@ -22,7 +22,7 @@ function typeError (type, value) {
 }
 
 function StringType (options = {}) {
-  assertValidOptions(options, {minLength: 'number', maxLength: 'number', pattern: 'string'})
+  assertValidOptions(options, {minLength: 'number', maxLength: 'number', pattern: 'object'})
   let description
   if (notEmpty(options)) {
     const optionsDescriptions = []
@@ -52,13 +52,41 @@ function StringType (options = {}) {
   })
 }
 
-function ObjectType (options = {}) {
-  assertValidOptions(options, {keys: 'object', requiredKeys: 'array', additionalKeys: 'boolean'})
+function Enum (...values) {
+  const name = `Enum(${values.join(', ')})`
+  return {
+    name,
+    validate: (value) => {
+      if (!values.includes(value)) {
+        return `has value "${value}" (type ${typeof value}) but must be one of these values: ${values.join(', ')}`
+      } else {
+        return undefined
+      }
+    }
+  }
+}
+
+function InstanceOf (klass) {
+  const name = `InstanceOf(${klass.name})`
+  return {
+    name,
+    validate: (value) => {
+      if (!(value instanceof klass)) {
+        return `value "${value}" (type ${typeof value}) must be an instance of ${klass.name}`
+      } else {
+        return undefined
+      }
+    }
+  }
+}
+
+function ObjectType (keys, options = {}) {
+  assertValidOptions(options, {requiredKeys: 'object', additionalKeys: 'boolean'})
   let description
-  if (notEmpty(options.keys)) {
-    const keyDescriptions = Object.keys(options.keys).map((key) => {
+  if (notEmpty(keys)) {
+    const keyDescriptions = Object.keys(keys).map((key) => {
       const meta = compact([
-        options.keys[key].name
+        keys[key].name,
         ((options.requiredKeys || []).includes(key) ? 'required' : undefined)
       ])
       return notEmpty(meta) ? `${key} (${meta.join(', ')})` : key
@@ -73,15 +101,15 @@ function ObjectType (options = {}) {
     validate: (value) => {
       if (typeof value !== 'object') return `must be of type object but was ${typeof value}`
       if (!options.additionalKeys) {
-        const invalidKeys = difference(Object.keys(value), Object.keys(options.keys))
+        const invalidKeys = difference(Object.keys(value), Object.keys(keys))
         if (notEmpty(invalidKeys)) return `has the following invalid keys: ${invalidKeys.join(', ')}`
       }
       if (notEmpty(options.requiredKeys)) {
-        const missingKeys = difference(options.requiredKeys, Object.keys(options.keys))
+        const missingKeys = difference(options.requiredKeys, Object.keys(value))
         if (notEmpty(missingKeys)) return `is missing the following required keys: ${missingKeys.join(', ')}`
       }
-      const keyErrors = compact(Object.keys(options.keys).reduce((acc, key) => {
-        const type = options.keys[key]
+      const keyErrors = compact(Object.keys(keys).reduce((acc, key) => {
+        const type = keys[key]
         const error = typeError(type, value[key])
         if (error) acc[key] = error
         return acc
@@ -144,9 +172,12 @@ function AnyOf (...types) {
 }
 
 module.exports = {
+  typeError,
   StringType,
   ObjectType,
   ArrayType,
+  Enum,
+  InstanceOf,
   AllOf,
   AnyOf
 }
