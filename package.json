@@ -4,12 +4,15 @@
   "description": "Runtime type checks / schema validation for JavaScript objects and values.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/peter/awesome-type-check.git"
   },
   "author": "Peter Marklund",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "jest": "24.1.0"
+  }
 }
