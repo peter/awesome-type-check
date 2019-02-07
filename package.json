@@ -1,5 +1,5 @@
 {
-  "name": "runtime-type-check",
+  "name": "awesome-type-check",
   "version": "0.0.1",
   "description": "Runtime type checks / schema validation for JavaScript objects and values.",
   "main": "index.js",
@@ -8,12 +8,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/peter/runtime-type-check.git"
+    "url": "git+https://github.com/peter/awesome-type-check.git"
   },
   "author": "Peter Marklund",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/peter/runtime-type-check/issues"
-  },
-  "homepage": "https://github.com/peter/runtime-type-check#readme"
+  "license": "ISC"
 }
