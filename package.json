@@ -1,0 +1,19 @@
+{
+  "name": "runtime-type-check",
+  "version": "0.0.1",
+  "description": "Runtime type checks / schema validation for JavaScript objects and values.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/peter/runtime-type-check.git"
+  },
+  "author": "Peter Marklund",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/peter/runtime-type-check/issues"
+  },
+  "homepage": "https://github.com/peter/runtime-type-check#readme"
+}
