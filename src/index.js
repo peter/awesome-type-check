@@ -1,7 +1,7 @@
-const {notEmpty, compact, difference, assertValidOptions} = require('./util')
+const {notEmpty, compact, difference, assertValidOptions, typeOf} = require('./util')
 
 function toString (type) {
-  if (typeof type === 'string') {
+  if (typeOf(type) === 'string') {
     return type
   } else if (type.name) {
     return type.name
@@ -11,8 +11,8 @@ function toString (type) {
 }
 
 function typeError (type, value) {
-  if (typeof type === 'string') {
-    return typeof value === type ? undefined : `must be of type string but was ${typeof value}`
+  if (typeOf(type) === 'string') {
+    return typeOf(value) === type ? undefined : `must be of type string but was ${typeOf(value)}`
   }
   const validate = type.validate || type
   const result = validate(value)
@@ -36,7 +36,7 @@ function StringType (options = {}) {
     description,
     options,
     validate: (value) => {
-      if (typeof value !== 'string') return `must be of type string but was ${typeof value}`
+      if (typeOf(value) !== 'string') return `must be of type string but was ${typeOf(value)}`
       const errors = []
       if (options.minLength && value.length < options.minLength) errors.push(`must be at least ${options.minLength} characters long but was only ${value.length} characters`)
       if (options.maxLength && value.length > options.maxLength) errors.push(`must be no more than ${options.maxLength} characters long but was ${value.length} characters`)
@@ -58,7 +58,7 @@ function Enum (...values) {
     name,
     validate: (value) => {
       if (!values.includes(value)) {
-        return `has value "${value}" (type ${typeof value}) but must be one of these values: ${values.join(', ')}`
+        return `has value "${value}" (type ${typeOf(value)}) but must be one of these values: ${values.join(', ')}`
       } else {
         return undefined
       }
@@ -72,7 +72,7 @@ function InstanceOf (klass) {
     name,
     validate: (value) => {
       if (!(value instanceof klass)) {
-        return `value "${value}" (type ${typeof value}) must be an instance of ${klass.name}`
+        return `value "${value}" (type ${typeOf(value)}) must be an instance of ${klass.name}`
       } else {
         return undefined
       }
@@ -99,8 +99,8 @@ function ObjectType (keys, options = {}) {
     description,
     options,
     validate: (value) => {
-      if (typeof value !== 'object') return `must be of type object but was ${typeof value}`
-      if (!options.additionalKeys) {
+      if (typeof value !== 'object') return `must be of type object but was ${typeOf(value)}`
+      if (options.additionalKeys === false) {
         const invalidKeys = difference(Object.keys(value), Object.keys(keys))
         if (notEmpty(invalidKeys)) return `has the following invalid keys: ${invalidKeys.join(', ')}`
       }
@@ -110,8 +110,10 @@ function ObjectType (keys, options = {}) {
       }
       const keyErrors = compact(Object.keys(keys).reduce((acc, key) => {
         const type = keys[key]
-        const error = typeError(type, value[key])
-        if (error) acc[key] = error
+        if (key in value) {
+          const error = typeError(type, value[key])
+          if (error) acc[key] = error  
+        }
         return acc
       }, {}))
       return notEmpty(keyErrors) ? keyErrors : undefined
@@ -129,7 +131,7 @@ function ArrayType (options = {}) {
     description,
     options,
     validate: (value) => {
-      if (!Array.isArray(value)) return `must be array but was ${typeof value}`
+      if (!Array.isArray(value)) return `must be array but was ${typeOf(value)}`
       const itemsError = value.reduce((acc, item, index) => {
         const itemError = typeError(options.items, item)
         if (itemError) acc[index] = itemError

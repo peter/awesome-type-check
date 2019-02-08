@@ -78,10 +78,22 @@ function assertValidOptions (options, validOptionTypes) {
   return options
 }
 
+// Similar to: https://github.com/jonschlinkert/kind-of/blob/master/index.js
+function typeOf (value) {
+  if (value === null) return 'null'
+  if (value === undefined) return 'undefined'
+  if (isArray(value)) return 'array'
+  if (value instanceof Date) return 'date';
+  if (value instanceof Error) return 'error';
+  if (value instanceof RegExp) return 'regexp';
+  return typeof value
+}
+
 module.exports = {
   empty,
   notEmpty,
   compact,
   difference,
-  assertValidOptions
+  assertValidOptions,
+  typeOf
 }

@@ -63,6 +63,7 @@ if (error) {
 
 ## Resources
 
+* [superstruct - Data Validation](https://github.com/ianstormtaylor/superstruct)
 * [joi - Object Schema Validation](https://github.com/hapijs/joi)
 * [facebook/prop-types - Type Checking React Props](https://github.com/facebook/prop-types)
 * [type_spec - Runtime Type Checks in Python](https://github.com/peter/type_spec)
