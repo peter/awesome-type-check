@@ -5,6 +5,8 @@ const JSON_TYPES = ['array', 'object', 'string', 'number', 'boolean', 'null']
 function toString (type) {
   if (typeOf(type) === 'string') {
     return type
+  } else if (type.title) {
+    return type.title
   } else if (type.name) {
     return type.name
   } else {
@@ -40,7 +42,8 @@ function StringType (options = {}) {
     description = `String with ${optionsDescriptions.join(' and ')}`
   }
   return compact({
-    name: 'StringType',
+    type: 'string',
+    title: 'StringType',
     description,
     options,
     validate: (value) => {
@@ -70,7 +73,8 @@ function NumberType (options = {}) {
     description = `Number with ${optionsDescriptions.join(' and ')}`
   }
   return compact({
-    name: 'NumberType',
+    type: 'number',
+    title: 'NumberType',
     description,
     options,
     validate: (value) => {
@@ -100,7 +104,7 @@ function NullType (options = {}) {
 function Enum (values, options = {}) {
   const description = `Enum(${values.join(', ')})`
   return {
-    name: 'Enum',
+    title: 'Enum',
     description,
     enum: values,
     options,
@@ -117,7 +121,7 @@ function Enum (values, options = {}) {
 function InstanceOf (klass, options = {}) {
   const description = `InstanceOf(${klass.name})`
   return {
-    name: 'InstanceOf',
+    title: 'InstanceOf',
     description,
     arg: klass,
     options,
@@ -134,7 +138,7 @@ function InstanceOf (klass, options = {}) {
 function TypeOf (type, options = {}) {
   return compact({
     type: JSON_TYPES.includes(type) ? type : undefined,
-    name: 'TypeOf',
+    title: 'TypeOf',
     arg: type,
     options,
     validate: (value) => {
@@ -150,7 +154,7 @@ function TypeOf (type, options = {}) {
 function Validate (validate, options = {}) {
   const description = options.description || valudate.name || 'Unnamed validate function'
   return {
-    name: 'Validate',
+    title: 'Validate',
     description,
     options,
     validate
@@ -175,7 +179,7 @@ function ObjectType (keys, options = {}) {
   }
   return compact({
     type: 'object',
-    name: 'ObjectType',
+    title: 'ObjectType',
     description,
     keys,
     options,
@@ -208,7 +212,7 @@ function ArrayType (items = 'any', options = {}) {
   const description = `Array with items ${toString(items)}`
   return compact({
     type: 'array',
-    name: 'ArrayType',
+    title: 'ArrayType',
     description,
     items,
     options,
@@ -235,7 +239,7 @@ function Required (type) {
 function AllOf (types, options = {}) {
   const description = `AllOf(${types.map(toString).join(', ')})`
   return {
-    name: 'AllOf',
+    title: 'AllOf',
     description,
     arg: types,
     options,
@@ -252,7 +256,7 @@ function AllOf (types, options = {}) {
 function AnyOf (types, options = {}) {
   const description = `AnyOf(${types.map(toString).join(', ')})`
   return {
-    name: 'AnyOf',
+    title: 'AnyOf',
     description,
     arg: types,
     options,

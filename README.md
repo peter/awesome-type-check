@@ -46,8 +46,6 @@ if (error) {
 
 ## TODO
 
-* Add NumberType
-* Add BoolType
 * Test custom validation function/type
 * ExactObject - syntactic sugar that calls ObjectType(schema, {additionalKeys: false})
 * Ability for ObjectType to take a valueType
