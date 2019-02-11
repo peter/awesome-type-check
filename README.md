@@ -26,7 +26,7 @@ const User = ObjectType(
   {
     name: 'string',
     username: Username,
-    status: Enum('active', 'inactive')
+    status: Enum(['active', 'inactive'])
   },
   {requiredKeys: ['username']}
 )
@@ -53,6 +53,7 @@ if (error) {
 * Ability for ObjectType to take a valueType
 * More test cases: Enum, nested objects/arrays, AnyOf, AllOf, custom types, optional arrays (ArrayOrScalar)
 * assertType(value, type)
+* Ability to easily generate documentation etc. based on a nested complex type (good navigability and meta data)
 
 * Integration with React. Ability to turn off in production
 

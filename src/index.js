@@ -1,5 +1,7 @@
 const {merge, notEmpty, compact, difference, assertValidOptions, typeOf, getIn, unique} = require('./util')
 
+const JSON_TYPES = ['array', 'object', 'string', 'number', 'boolean', 'null']
+
 function toString (type) {
   if (typeOf(type) === 'string') {
     return type
@@ -21,11 +23,7 @@ function typeObject (type) {
 }
 
 function typeError (type, value) {
-  if (typeOf(type) === 'string') {
-    return typeOf(value) === type ? undefined : `must be of type string but was ${typeOf(value)}`
-  }
-  const validate = type.validate || type
-  const result = validate(value)
+  const result = typeObject(type).validate(value)
   if (result === false || result === undefined) return undefined
   if (result === true) return 'is invalid'
   return result
@@ -42,14 +40,14 @@ function StringType (options = {}) {
     description = `String with ${optionsDescriptions.join(' and ')}`
   }
   return compact({
-    name: 'String',
+    name: 'StringType',
     description,
     options,
     validate: (value) => {
       if (typeOf(value) !== 'string') return `must be of type string but was ${typeOf(value)}`
       const errors = []
-      if (options.minLength && value.length < options.minLength) errors.push(`must be at least ${options.minLength} characters long but was only ${value.length} characters`)
-      if (options.maxLength && value.length > options.maxLength) errors.push(`must be no more than ${options.maxLength} characters long but was ${value.length} characters`)
+      if (options.minLength !== undefined && value.length < options.minLength) errors.push(`must be at least ${options.minLength} characters long but was only ${value.length} characters`)
+      if (options.maxLength !== undefined && value.length > options.maxLength) errors.push(`must be no more than ${options.maxLength} characters long but was ${value.length} characters`)
       if (options.pattern && !value.match(new RegExp(options.pattern))) errors.push(`must match pattern ${options.pattern}`)
       if (errors.length > 1) {
         return errors
@@ -62,10 +60,49 @@ function StringType (options = {}) {
   })
 }
 
+function NumberType (options = {}) {
+  assertValidOptions(options, {minimum: 'number', maximum: 'number'})
+  let description
+  if (notEmpty(options)) {
+    const optionsDescriptions = []
+    if (options.minimum !== undefined) optionsDescriptions.push(`minimum length ${options.minimum}`)
+    if (options.maximum !== undefined) optionsDescriptions.push(`maximum length ${options.maximum}`)
+    description = `Number with ${optionsDescriptions.join(' and ')}`
+  }
+  return compact({
+    name: 'NumberType',
+    description,
+    options,
+    validate: (value) => {
+      if (typeOf(value) !== 'number') return `must be of type number but was ${typeOf(value)}`
+      const errors = []
+      if (options.minimum !== undefined && value < options.minimum) errors.push(`must be at least ${options.minimum} was only ${value}`)
+      if (options.maximum !== undefined && value > options.maximum) errors.push(`must be no more than ${options.maximum} but was ${value}`)
+      if (errors.length > 1) {
+        return errors
+      } else if (errors.length === 1) {
+        return errors[0]
+      } else {
+        return undefined
+      }
+    }
+  })
+}
+
+function BoolType (options = {}) {
+  return TypeOf('boolean', options)
+}
+
+function NullType (options = {}) {
+  return TypeOf('null', options)
+}
+
 function Enum (values, options = {}) {
-  const name = `Enum(${values.join(', ')})`
+  const description = `Enum(${values.join(', ')})`
   return {
-    name,
+    name: 'Enum',
+    description,
+    enum: values,
     options,
     validate: (value) => {
       if (!values.includes(value)) {
@@ -78,9 +115,11 @@ function Enum (values, options = {}) {
 }
 
 function InstanceOf (klass, options = {}) {
-  const name = `InstanceOf(${klass.name})`
+  const description = `InstanceOf(${klass.name})`
   return {
-    name,
+    name: 'InstanceOf',
+    description,
+    arg: klass,
     options,
     validate: (value) => {
       if (!(value instanceof klass)) {
@@ -93,23 +132,26 @@ function InstanceOf (klass, options = {}) {
 }
 
 function TypeOf (type, options = {}) {
-  const name = `TypeOf(${type})`
-  return {
-    name,
+  return compact({
+    type: JSON_TYPES.includes(type) ? type : undefined,
+    name: 'TypeOf',
+    arg: type,
     options,
     validate: (value) => {
       if (typeOf(value) !== type) {
-        return `value "${value}" (type ${typeOf(value)}) must be typeof ${type}`
+        return `value "${value}" (type ${typeOf(value)}) must be of type ${type}`
       } else {
         return undefined
       }
     }
-  }
+  })
 }
 
 function Validate (validate, options = {}) {
+  const description = options.description || valudate.name || 'Unnamed validate function'
   return {
-    name: 'Custom validate function',
+    name: 'Validate',
+    description,
     options,
     validate
   }
@@ -117,12 +159,14 @@ function Validate (validate, options = {}) {
 
 function ObjectType (keys, options = {}) {
   assertValidOptions(options, {requiredKeys: ['string'], additionalKeys: 'boolean'})
+  const keysMarkedRequired = Object.keys(keys).filter(key => getIn(typeObject(keys[key]), 'options.required'))
+  const requiredKeys = unique((options.requiredKeys || []).concat(keysMarkedRequired))
   let description
   if (notEmpty(keys)) {
     const keyDescriptions = Object.keys(keys).map((key) => {
       const meta = compact([
         keys[key].name,
-        ((options.requiredKeys || []).includes(key) ? 'required' : undefined)
+        (requiredKeys.includes(key) ? 'required' : undefined)
       ])
       return notEmpty(meta) ? `${key} (${meta.join(', ')})` : key
     })
@@ -130,8 +174,10 @@ function ObjectType (keys, options = {}) {
     if (options.additionalKeys) description += '. Addtional keys are allowed'
   }
   return compact({
-    name: 'Object',
+    type: 'object',
+    name: 'ObjectType',
     description,
+    keys,
     options,
     validate: (value) => {
       if (typeof value !== 'object') return `must be of type object but was ${typeOf(value)}`
@@ -139,8 +185,6 @@ function ObjectType (keys, options = {}) {
         const invalidKeys = difference(Object.keys(value), Object.keys(keys))
         if (notEmpty(invalidKeys)) return `has the following invalid keys: ${invalidKeys.join(', ')}`
       }
-      const keysMarkedRequired = Object.keys(keys).filter(key => getIn(typeObject(keys[key]), 'options.required'))
-      const requiredKeys = unique((options.requiredKeys || []).concat(keysMarkedRequired))
       if (notEmpty(requiredKeys)) {
         const missingKeys = difference(requiredKeys, Object.keys(value))
         if (notEmpty(missingKeys)) return `is missing the following required keys: ${missingKeys.join(', ')}`
@@ -163,8 +207,10 @@ function ArrayType (items = 'any', options = {}) {
   // TODO: add minLength/maxLength to description
   const description = `Array with items ${toString(items)}`
   return compact({
-    name: 'Array',
+    type: 'array',
+    name: 'ArrayType',
     description,
+    items,
     options,
     validate: (value) => {
       if (!Array.isArray(value)) return `must be array but was ${typeOf(value)}`
@@ -187,9 +233,11 @@ function Required (type) {
 }
 
 function AllOf (types, options = {}) {
-  const name = `AllOf(${types.map(toString).join(', ')})`
+  const description = `AllOf(${types.map(toString).join(', ')})`
   return {
-    name,
+    name: 'AllOf',
+    description,
+    arg: types,
     options,
     validate: (value) => {
       for (let type of types) {
@@ -202,9 +250,11 @@ function AllOf (types, options = {}) {
 }
 
 function AnyOf (types, options = {}) {
-  const name = `AnyOf(${types.map(toString).join(', ')})`
+  const description = `AnyOf(${types.map(toString).join(', ')})`
   return {
-    name,
+    name: 'AnyOf',
+    description,
+    arg: types,
     options,
     validate: (value) => {
       const matchingType = types.find((type) => !typeError(type, value))
@@ -219,7 +269,11 @@ function AnyOf (types, options = {}) {
 
 module.exports = {
   typeError,
+  typeObject,
   StringType,
+  NumberType,
+  BoolType,
+  NullType,
   ObjectType,
   ArrayType,
   Enum,
