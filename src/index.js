@@ -22,7 +22,7 @@ function typeError (type, value) {
 }
 
 function StringType (options = {}) {
-  assertValidOptions(options, {minLength: 'number', maxLength: 'number', pattern: 'object'})
+  assertValidOptions(options, {minLength: 'number', maxLength: 'number', pattern: 'regexp'})
   let description
   if (notEmpty(options)) {
     const optionsDescriptions = []
@@ -81,7 +81,7 @@ function InstanceOf (klass) {
 }
 
 function ObjectType (keys, options = {}) {
-  assertValidOptions(options, {requiredKeys: 'object', additionalKeys: 'boolean'})
+  assertValidOptions(options, {requiredKeys: ['string'], additionalKeys: 'boolean'})
   let description
   if (notEmpty(keys)) {
     const keyDescriptions = Object.keys(keys).map((key) => {

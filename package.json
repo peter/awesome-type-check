@@ -14,5 +14,9 @@
   "license": "ISC",
   "devDependencies": {
     "jest": "24.1.0"
+  },
+  "dependencies": {
+    "ajv": "6.8.1",
+    "ajv-keywords": "3.4.0"
   }
 }

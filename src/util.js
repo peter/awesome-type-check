@@ -57,27 +57,6 @@ function difference (array1, array2) {
   return values1.filter(v => !values2.includes(v))
 }
 
-function assertValidOptions (options, validOptionTypes) {
-	if (!options) return
-	for (const key in options) {
-		const actualType = typeof options[key]
-		const expectedType = validOptionTypes[key]
-		if (!expectedType) {
-			throw new Error(
-				`Unrecognized options key ${key}, should be one of ${Object.keys(validOptionTypes).join(
-					', '
-				)}`
-			);
-		}
-		if (expectedType !== 'any' && actualType !== expectedType) {
-			throw new Error(
-				`Type of options key ${key} is ${actualType} but needs to be ${expectedType}`
-			)
-		}
-  }
-  return options
-}
-
 // Similar to: https://github.com/jonschlinkert/kind-of/blob/master/index.js
 function typeOf (value) {
   if (value === null) return 'null'
@@ -89,11 +68,40 @@ function typeOf (value) {
   return typeof value
 }
 
+function assertValidOptions (options, validOptionTypes, assertConfig = {}) {
+	if (!options) return;
+	for (const key in options) {
+		const actualType = typeOf(options[key])
+    let expectedType = validOptionTypes[key]
+    if (typeOf(expectedType) === 'array') expectedType = 'array'
+		if (assertConfig.additionalKeys === false && !(key in validOptionTypes)) {
+			throw new Error(
+				`Unrecognized options key ${key}, should be one of ${Object.keys(validOptionTypes).join(
+					', '
+				)}`
+			)
+		}
+		if (key in validOptionTypes && actualType !== expectedType) {
+			throw new Error(
+				`Type of options key ${key} is ${actualType} but needs to be ${expectedType}`
+      )
+		}
+    if (expectedType === 'array') {
+      const itemsType = validOptionTypes[key][0]
+      options[key].forEach((item, index) => {
+        if (typeOf(item) !== itemsType) {
+          throw new Error(`Item type for options key ${key} at index ${index} is ${typeOf(item)} but needs to be ${itemsType}`)
+        }
+      })
+    }
+  }
+}
+
 module.exports = {
   empty,
   notEmpty,
   compact,
   difference,
+  typeOf,
   assertValidOptions,
-  typeOf
 }
