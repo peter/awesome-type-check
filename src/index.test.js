@@ -1,4 +1,4 @@
-const {typeError, ObjectType, StringType, Enum, TypeOf, Required} = require('./index')
+const {typeError, ObjectType, ExactObject, StringType, Enum, TypeOf, Required} = require('./index')
 
 test('ObjectType without options - checks types of keys, keys are optional, additional keys allowed', () => {
   const Username = StringType({minLength: 3, maxLength: 50, pattern: /^[a-z0-9_-]+$/})
@@ -26,7 +26,7 @@ test('ObjectType without options - checks types of keys, keys are optional, addi
   })
 })
 
-test('ObjectType - complains about missing requiredKeys', () => {
+test('ObjectType - complains about missing keys given required option', () => {
   const Username = StringType({minLength: 3, maxLength: 50, pattern: /^[a-z0-9_-]+$/})
   const User = ObjectType(
     {
@@ -35,7 +35,7 @@ test('ObjectType - complains about missing requiredKeys', () => {
       status: Enum(['active', 'inactive'])
     },
     {
-      requiredKeys: ['username', 'status']
+      required: ['username', 'status']
     }
   )
 
@@ -48,7 +48,7 @@ test('ObjectType - complains about missing requiredKeys', () => {
   expect(typeError(User, {name: 'Joe', username: 'foobar', status: 'active'})).toEqual(undefined)
 })
 
-test('ObjectType - complains about missing keys marked as Required', () => {
+test('ObjectType - complains about missing keys marked as required', () => {
   const Username = StringType({minLength: 3, maxLength: 50, pattern: /^[a-z0-9_-]+$/})
   const User = ObjectType(
     {
@@ -58,7 +58,7 @@ test('ObjectType - complains about missing keys marked as Required', () => {
       foobar: 'boolean'
     },
     {
-      requiredKeys: ['status']
+      required: ['status']
     }
   )
 
@@ -70,16 +70,13 @@ test('ObjectType - complains about missing keys marked as Required', () => {
   expect(typeError(User, {name: 'Joe', username: 'foobar', status: 'active'})).toEqual(undefined)
 })
 
-test('ObjectType - complains about invalid keys with additionalKeys: false', () => {
+test('ObjectType - complains about invalid keys with additionalProperties: false', () => {
   const Username = StringType({minLength: 3, maxLength: 50, pattern: /^[a-z0-9_-]+$/})
-  const User = ObjectType(
+  const User = ExactObject(
     {
       name: 'string',
       username: Username,
       status: Enum(['active', 'inactive'])
-    },
-    {
-      additionalKeys: false
     }
   )
 

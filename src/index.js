@@ -161,40 +161,42 @@ function Validate (validate, options = {}) {
   }
 }
 
-function ObjectType (keys, options = {}) {
-  assertValidOptions(options, {requiredKeys: ['string'], additionalKeys: 'boolean'})
-  const keysMarkedRequired = Object.keys(keys).filter(key => getIn(typeObject(keys[key]), 'options.required'))
-  const requiredKeys = unique((options.requiredKeys || []).concat(keysMarkedRequired))
+function ObjectType (properties, options = {}) {
+  assertValidOptions(options, {required: ['string'], additionalProperties: 'boolean'})
+  const keysMarkedRequired = Object.keys(properties).filter(key => getIn(typeObject(properties[key]), 'options.required'))
+  const requiredKeys = unique((options.required || []).concat(keysMarkedRequired))
   let description
-  if (notEmpty(keys)) {
-    const keyDescriptions = Object.keys(keys).map((key) => {
+  if (notEmpty(properties)) {
+    const keyDescriptions = Object.keys(properties).map((key) => {
       const meta = compact([
-        keys[key].name,
+        properties[key].name,
         (requiredKeys.includes(key) ? 'required' : undefined)
       ])
       return notEmpty(meta) ? `${key} (${meta.join(', ')})` : key
     })
     description = `Object with keys ${keyDescriptions.join(', ')}`
-    if (options.additionalKeys) description += '. Addtional keys are allowed'
+    if (options.additionalProperties) description += '. Addtional keys are allowed'
   }
   return compact({
     type: 'object',
     title: 'ObjectType',
     description,
-    keys,
+    properties,
+    additionalProperties: options.additionalProperties,
+    required: options.required,
     options,
     validate: (value) => {
       if (typeof value !== 'object') return `must be of type object but was ${typeOf(value)}`
-      if (options.additionalKeys === false) {
-        const invalidKeys = difference(Object.keys(value), Object.keys(keys))
+      if (options.additionalProperties === false) {
+        const invalidKeys = difference(Object.keys(value), Object.keys(properties))
         if (notEmpty(invalidKeys)) return `has the following invalid keys: ${invalidKeys.join(', ')}`
       }
       if (notEmpty(requiredKeys)) {
         const missingKeys = difference(requiredKeys, Object.keys(value))
         if (notEmpty(missingKeys)) return `is missing the following required keys: ${missingKeys.join(', ')}`
       }
-      const keyErrors = compact(Object.keys(keys).reduce((acc, key) => {
-        const type = keys[key]
+      const keyErrors = compact(Object.keys(properties).reduce((acc, key) => {
+        const type = properties[key]
         if (key in value) {
           const error = typeError(type, value[key])
           if (error) acc[key] = error  
@@ -204,6 +206,10 @@ function ObjectType (keys, options = {}) {
       return notEmpty(keyErrors) ? keyErrors : undefined
     }
   })
+}
+
+function ExactObject (properties, options = {}) {
+  return ObjectType(properties, merge(options, {additionalProperties: false}))
 }
 
 function ArrayType (items = 'any', options = {}) {
@@ -279,6 +285,7 @@ module.exports = {
   BoolType,
   NullType,
   ObjectType,
+  ExactObject,
   ArrayType,
   Enum,
   InstanceOf,
