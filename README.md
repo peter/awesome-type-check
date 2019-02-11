@@ -18,18 +18,15 @@ npm install awesome-type-check
 ## Usage
 
 ```javascript
-const {typeError, ObjectType, StringType, Enum} = require('awesome-type-check')
+const {typeError, ObjectType, StringType, Enum, Required} = require('awesome-type-check')
 
 const Username = StringType({minLength: 3, maxLength: 50, pattern: /^[a-z0-9_-]+$/})
 
-const User = ObjectType(
-  {
+const User = ObjectType({
     name: 'string',
-    username: Username,
+    username: Required(Username),
     status: Enum(['active', 'inactive'])
-  },
-  {requiredKeys: ['username']}
-)
+})
 
 const error = typeError(User, {name: 'Joe', username: 'j', status: 'foobar'})
 

@@ -1,4 +1,4 @@
-const {merge, notEmpty, compact, difference, assertValidOptions, typeOf, getIn, unique} = require('./util')
+const {merge, notEmpty, compact, difference, assertValidOptions, mapObj, typeOf, getIn, unique} = require('./util')
 
 const JSON_TYPES = ['array', 'object', 'string', 'number', 'boolean', 'null']
 
@@ -31,6 +31,16 @@ function typeError (type, value) {
   return result
 }
 
+function assertType (type, value) {
+  const result = typeError(type, value)
+  if (result) {
+    const message = typeOf(result) === 'string' ? result : 'is invalid'
+    const error = new Error(message)
+    error.typeError = result
+    throw error
+  }
+}
+
 function StringType (options = {}) {
   assertValidOptions(options, {minLength: 'number', maxLength: 'number', pattern: 'regexp'})
   let description
@@ -38,7 +48,7 @@ function StringType (options = {}) {
     const optionsDescriptions = []
     if (options.minLength) optionsDescriptions.push(`minimum length ${options.minLength}`)
     if (options.maxLength) optionsDescriptions.push(`maximum length ${options.maxLength}`)
-    if (options.pattern) optionsDescriptions.push(`that matches pattern ${options.pattern}`)
+    if (options.pattern) optionsDescriptions.push(`matching pattern ${options.pattern}`)
     description = `String with ${optionsDescriptions.join(' and ')}`
   }
   return compact({
@@ -136,6 +146,7 @@ function InstanceOf (klass, options = {}) {
 }
 
 function TypeOf (type, options = {}) {
+  if (typeOf(type) !== 'string') throw new Error(`type argument to TypeOf must be a string but was of type ${typeOf(type)}`)
   return compact({
     type: JSON_TYPES.includes(type) ? type : undefined,
     title: 'TypeOf',
@@ -163,6 +174,7 @@ function Validate (validate, options = {}) {
 
 function ObjectType (properties, options = {}) {
   assertValidOptions(options, {required: ['string'], additionalProperties: 'boolean'})
+  properties = mapObj(properties, (k, v) => typeObject(v))
   const keysMarkedRequired = Object.keys(properties).filter(key => getIn(typeObject(properties[key]), 'options.required'))
   const requiredKeys = unique((options.required || []).concat(keysMarkedRequired))
   let description
@@ -213,6 +225,7 @@ function ExactObject (properties, options = {}) {
 }
 
 function ArrayType (items = 'any', options = {}) {
+  items = typeObject(items)
   assertValidOptions(options, {minLength: 'number', maxLength: 'number'})
   // TODO: add minLength/maxLength to description
   const description = `Array with items ${toString(items)}`
@@ -243,6 +256,7 @@ function Required (type) {
 }
 
 function AllOf (types, options = {}) {
+  types = types.map(typeObject)
   const description = `AllOf(${types.map(toString).join(', ')})`
   return {
     title: 'AllOf',
@@ -260,6 +274,7 @@ function AllOf (types, options = {}) {
 }
 
 function AnyOf (types, options = {}) {
+  types = types.map(typeObject)
   const description = `AnyOf(${types.map(toString).join(', ')})`
   return {
     title: 'AnyOf',
@@ -279,6 +294,7 @@ function AnyOf (types, options = {}) {
 
 module.exports = {
   typeError,
+  assertType,
   typeObject,
   StringType,
   NumberType,

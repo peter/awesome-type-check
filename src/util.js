@@ -80,6 +80,14 @@ function difference (array1, array2) {
   return values1.filter(v => !values2.includes(v))
 }
 
+function mapObj (obj, valueTransform) {
+  if (!obj) return undefined
+  return Object.entries(obj).reduce((acc, [k, v]) => {
+    acc[k] = valueTransform(k, v)
+    return acc
+  }, {})
+}
+
 // Similar to: https://github.com/jonschlinkert/kind-of/blob/master/index.js
 function typeOf (value) {
   if (value === null) return 'null'
@@ -128,6 +136,7 @@ module.exports = {
   getIn,
   unique,
   difference,
+  mapObj,
   typeOf,
   assertValidOptions,
 }
