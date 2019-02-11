@@ -31,6 +31,10 @@ function notEmpty (value) {
   return !empty(value)
 }
 
+function merge (object1, object2) {
+  return Object.assign({}, object1, object2)
+}
+
 // Alternative name: removeEmpty
 function compact (value) {
   const predicate = notEmpty
@@ -49,6 +53,25 @@ function compact (value) {
   } else {
     return value
   }
+}
+
+// Like: http://ramdajs.com/docs/#path
+function getIn (obj, path, defaultValue) {
+  path = isArray(path) ? path : path.split('.')
+  let result = obj
+  for (const key of path) {
+    const value = (result && result[key])
+    if (nil(value)) {
+      return defaultValue
+    } else {
+      result = value
+    }
+  }
+  return result
+}
+
+function unique (array) {
+  return Array.from(new Set(array))
 }
 
 function difference (array1, array2) {
@@ -100,7 +123,10 @@ function assertValidOptions (options, validOptionTypes, assertConfig = {}) {
 module.exports = {
   empty,
   notEmpty,
+  merge,
   compact,
+  getIn,
+  unique,
   difference,
   typeOf,
   assertValidOptions,

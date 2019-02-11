@@ -1,4 +1,4 @@
-const {notEmpty, compact, difference, assertValidOptions, typeOf} = require('./util')
+const {merge, notEmpty, compact, difference, assertValidOptions, typeOf, getIn, unique} = require('./util')
 
 function toString (type) {
   if (typeOf(type) === 'string') {
@@ -7,6 +7,16 @@ function toString (type) {
     return type.name
   } else {
     return 'unnamed custom type'
+  }
+}
+
+function typeObject (type) {
+  if (typeOf(type) === 'string') {
+    return TypeOf(type)
+  } else if (typeOf(type) === 'function') {
+    return Validate(type)
+  } else {
+    return type
   }
 }
 
@@ -52,10 +62,11 @@ function StringType (options = {}) {
   })
 }
 
-function Enum (...values) {
+function Enum (values, options = {}) {
   const name = `Enum(${values.join(', ')})`
   return {
     name,
+    options,
     validate: (value) => {
       if (!values.includes(value)) {
         return `has value "${value}" (type ${typeOf(value)}) but must be one of these values: ${values.join(', ')}`
@@ -66,10 +77,11 @@ function Enum (...values) {
   }
 }
 
-function InstanceOf (klass) {
+function InstanceOf (klass, options = {}) {
   const name = `InstanceOf(${klass.name})`
   return {
     name,
+    options,
     validate: (value) => {
       if (!(value instanceof klass)) {
         return `value "${value}" (type ${typeOf(value)}) must be an instance of ${klass.name}`
@@ -77,6 +89,29 @@ function InstanceOf (klass) {
         return undefined
       }
     }
+  }
+}
+
+function TypeOf (type, options = {}) {
+  const name = `TypeOf(${type})`
+  return {
+    name,
+    options,
+    validate: (value) => {
+      if (typeOf(value) !== type) {
+        return `value "${value}" (type ${typeOf(value)}) must be typeof ${type}`
+      } else {
+        return undefined
+      }
+    }
+  }
+}
+
+function Validate (validate, options = {}) {
+  return {
+    name: 'Custom validate function',
+    options,
+    validate
   }
 }
 
@@ -104,8 +139,10 @@ function ObjectType (keys, options = {}) {
         const invalidKeys = difference(Object.keys(value), Object.keys(keys))
         if (notEmpty(invalidKeys)) return `has the following invalid keys: ${invalidKeys.join(', ')}`
       }
-      if (notEmpty(options.requiredKeys)) {
-        const missingKeys = difference(options.requiredKeys, Object.keys(value))
+      const keysMarkedRequired = Object.keys(keys).filter(key => getIn(typeObject(keys[key]), 'options.required'))
+      const requiredKeys = unique((options.requiredKeys || []).concat(keysMarkedRequired))
+      if (notEmpty(requiredKeys)) {
+        const missingKeys = difference(requiredKeys, Object.keys(value))
         if (notEmpty(missingKeys)) return `is missing the following required keys: ${missingKeys.join(', ')}`
       }
       const keyErrors = compact(Object.keys(keys).reduce((acc, key) => {
@@ -121,11 +158,10 @@ function ObjectType (keys, options = {}) {
   })
 }
 
-function ArrayType (options = {}) {
-  assertValidOptions(options, {items: 'any', minLength: 'number', maxLength: 'number'})
-  if (!options.items) throw new Error('Missing items key when creating ArrayType')
+function ArrayType (items = 'any', options = {}) {
+  assertValidOptions(options, {minLength: 'number', maxLength: 'number'})
   // TODO: add minLength/maxLength to description
-  const description = `Array with items ${toString(options.items)}`
+  const description = `Array with items ${toString(items)}`
   return compact({
     name: 'Array',
     description,
@@ -133,7 +169,7 @@ function ArrayType (options = {}) {
     validate: (value) => {
       if (!Array.isArray(value)) return `must be array but was ${typeOf(value)}`
       const itemsError = value.reduce((acc, item, index) => {
-        const itemError = typeError(options.items, item)
+        const itemError = typeError(items, item)
         if (itemError) acc[index] = itemError
       }, {})
       if (notEmpty(itemsError)) return itemsError
@@ -144,10 +180,17 @@ function ArrayType (options = {}) {
   })
 }
 
-function AllOf (...types) {
+function Required (type) {
+  const _typeObject = typeObject(type)
+  const options = merge(_typeObject.options, {required: true})
+  return merge(_typeObject, {options})
+}
+
+function AllOf (types, options = {}) {
   const name = `AllOf(${types.map(toString).join(', ')})`
   return {
     name,
+    options,
     validate: (value) => {
       for (let type of types) {
         const error = typeError(type, value)
@@ -158,10 +201,11 @@ function AllOf (...types) {
   }
 }
 
-function AnyOf (...types) {
+function AnyOf (types, options = {}) {
   const name = `AnyOf(${types.map(toString).join(', ')})`
   return {
     name,
+    options,
     validate: (value) => {
       const matchingType = types.find((type) => !typeError(type, value))
       if (matchingType) {
@@ -180,6 +224,9 @@ module.exports = {
   ArrayType,
   Enum,
   InstanceOf,
+  TypeOf,
+  Validate,
+  Required,
   AllOf,
   AnyOf
 }

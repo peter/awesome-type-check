@@ -46,8 +46,22 @@ if (error) {
 
 ## TODO
 
-* Use custom typeOf similar to what the kind-of package does, put it in type-of.js
+* Add NumberType
+* Add BoolType
+* Test custom validation function/type
+* ExactObject - syntactic sugar that calls ObjectType(schema, {additionalKeys: false})
+* Ability for ObjectType to take a valueType
+* More test cases: Enum, nested objects/arrays, AnyOf, AllOf, custom types, optional arrays (ArrayOrScalar)
 * assertType(value, type)
+
+* Integration with React. Ability to turn off in production
+
+* Benchmark with schema
+
+* Remove ajv dependencies and schema if we are not going to use them
+
+* Apply to the assertValidOptions use case
+
 * TypeScript
 * Linting
 * Jest
