@@ -1,7 +1,8 @@
-const {typeError, ObjectType, ExactObject, StringType, Enum, TypeOf, Required} = require('./index')
+const {typeError, ObjectType, ExactObject, ObjectOf, StringType, Enum, TypeOf, Required} = require('./index')
+
+const Username = StringType({minLength: 3, maxLength: 50, pattern: '^[a-z0-9_-]+$'})
 
 test('ObjectType without options - checks types of keys, keys are optional, additional keys allowed', () => {
-  const Username = StringType({minLength: 3, maxLength: 50, pattern: /^[a-z0-9_-]+$/})
   const User = ObjectType(
     {
       name: 'string',
@@ -27,7 +28,6 @@ test('ObjectType without options - checks types of keys, keys are optional, addi
 })
 
 test('ObjectType - complains about missing keys given required option', () => {
-  const Username = StringType({minLength: 3, maxLength: 50, pattern: /^[a-z0-9_-]+$/})
   const User = ObjectType(
     {
       name: 'string',
@@ -49,7 +49,6 @@ test('ObjectType - complains about missing keys given required option', () => {
 })
 
 test('ObjectType - complains about missing keys marked as required', () => {
-  const Username = StringType({minLength: 3, maxLength: 50, pattern: /^[a-z0-9_-]+$/})
   const User = ObjectType(
     {
       name: TypeOf('string', {required: true}),
@@ -71,7 +70,6 @@ test('ObjectType - complains about missing keys marked as required', () => {
 })
 
 test('ObjectType - complains about invalid keys with additionalProperties: false', () => {
-  const Username = StringType({minLength: 3, maxLength: 50, pattern: /^[a-z0-9_-]+$/})
   const User = ExactObject(
     {
       name: 'string',
@@ -85,4 +83,20 @@ test('ObjectType - complains about invalid keys with additionalProperties: false
   expect(typeError(User, {foo: 1})).toEqual('has the following invalid keys: foo')
 
   expect(typeError(User, {name: 'Joe', username: 'foobar', status: 'active', bar: true})).toEqual('has the following invalid keys: bar')
+})
+
+test('ObjectOf - can specify an object with a certain value type (via patternProperties)', () => {
+  const User = ExactObject(
+    {
+      name: 'string',
+      username: Username,
+      status: Enum(['active', 'inactive'])
+    },
+    {title: 'User'}
+  )
+  const Users = ObjectOf(User)
+
+  expect(typeError(Users, {})).toEqual(undefined)
+
+  expect(typeError(Users, {foo: 1})).toEqual({'foo': 'must be of type User (ObjectType) but was number'})
 })

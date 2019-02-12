@@ -105,7 +105,7 @@ function assertValidOptions (options, validOptionTypes, assertConfig = {}) {
 		const actualType = typeOf(options[key])
     let expectedType = validOptionTypes[key]
     if (typeOf(expectedType) === 'array') expectedType = 'array'
-		if (assertConfig.additionalKeys === false && !(key in validOptionTypes)) {
+		if (assertConfig.additionalKeys !== true && !(key in validOptionTypes)) {
 			throw new Error(
 				`Unrecognized options key ${key}, should be one of ${Object.keys(validOptionTypes).join(
 					', '

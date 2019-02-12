@@ -44,11 +44,10 @@ if (error) {
 ## TODO
 
 * Test custom validation function/type
-* ExactObject - syntactic sugar that calls ObjectType(schema, {additionalKeys: false})
-* Ability for ObjectType to take a valueType
 * More test cases: Enum, nested objects/arrays, AnyOf, AllOf, custom types, optional arrays (ArrayOrScalar)
-* assertType(value, type)
-* Ability to easily generate documentation etc. based on a nested complex type (good navigability and meta data)
+* Test ability to easily generate documentation etc. based on a nested complex type (good navigability and meta data)
+* Change ajv to be a dev dependency and use it to test compliance with json schema
+* More syntactic sugar for string types: 'string|number!'
 
 * Integration with React. Ability to turn off in production
 
