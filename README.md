@@ -27,12 +27,13 @@ npm install awesome-type-check
 ```javascript
 const {typeError, ObjectType, StringType, Enum, Required} = require('awesome-type-check')
 
-const Username = StringType({minLength: 3, maxLength: 50, pattern: /^[a-z0-9_-]+$/})
+const Username = StringType({minLength: 3, maxLength: 50, pattern: '^[a-z0-9_-]+$'})
 
 const User = ObjectType({
     name: 'string',
     username: Required(Username),
-    status: Enum(['active', 'inactive'])
+    status: Enum(['active', 'inactive']),
+    bonus: (v) => typeof v === 'number' && v > 0
 })
 
 const error = typeError(User, {name: 'Joe', username: 'j', status: 'foobar'})
