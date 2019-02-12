@@ -1,4 +1,18 @@
+const Ajv = require('ajv')
+const ajv = new Ajv()
 const {typeError, ObjectType, ExactObject, ObjectOf, StringType, Enum, TypeOf, Required} = require('./index')
+
+function assertSchema (schema, data) {
+  ajv.validate(schema, data)
+  if (ajv.errors) {
+    console.log('assertSchema errors', ajv.errors)
+    const error = new Error('assertSchema errors')
+    error.ajvErrors = ajv.errors
+    error.schema = schema
+    error.data = data
+    throw error
+  }
+}
 
 const Username = StringType({minLength: 3, maxLength: 50, pattern: '^[a-z0-9_-]+$'})
 
@@ -11,6 +25,8 @@ test('ObjectType without options - checks types of keys, keys are optional, addi
       bonus: (v) => typeof v === 'number' && v > 0
     }
   )
+
+  assertSchema(User, {})
 
   expect(typeError(User, {})).toEqual(undefined)
 
@@ -52,7 +68,10 @@ test('ObjectType - complains about missing keys given required option', () => {
 
   expect(typeError(User, {name: 'Joe', username: 'foobar'})).toEqual('is missing the following required keys: status')
 
-  expect(typeError(User, {name: 'Joe', username: 'foobar', status: 'active'})).toEqual(undefined)
+  const validUser = {name: 'Joe', username: 'foobar', status: 'active'}
+  expect(typeError(User, validUser)).toEqual(undefined)
+
+  assertSchema(User, validUser)
 })
 
 test('ObjectType - complains about missing keys marked as required', () => {
@@ -73,7 +92,10 @@ test('ObjectType - complains about missing keys marked as required', () => {
 
   expect(typeError(User, {name: 'Joe', username: 'foobar'})).toEqual('is missing the following required keys: status')
 
-  expect(typeError(User, {name: 'Joe', username: 'foobar', status: 'active'})).toEqual(undefined)
+  const validUser = {name: 'Joe', username: 'foobar', status: 'active'}
+  expect(typeError(User, validUser)).toEqual(undefined)
+
+  assertSchema(User, validUser)
 })
 
 test('ObjectType - complains about invalid keys with additionalProperties: false', () => {
@@ -84,6 +106,8 @@ test('ObjectType - complains about invalid keys with additionalProperties: false
       status: Enum(['active', 'inactive'])
     }
   )
+
+  assertSchema(User, {})
 
   expect(typeError(User, {})).toEqual(undefined)
 
@@ -102,6 +126,8 @@ test('ObjectOf - can specify an object with a certain value type (via patternPro
     {title: 'User'}
   )
   const Users = ObjectOf(User)
+
+  assertSchema(Users, {})
 
   expect(typeError(Users, {})).toEqual(undefined)
 

@@ -175,14 +175,14 @@ function Validate (validate, options = {}) {
 function ObjectType (properties, options = {}) {
   assertValidOptions(options, {title: 'string', required: ['string'], additionalProperties: 'boolean', patternProperties: 'object'})
   properties = mapObj(properties, (k, v) => typeObject(v))
-  const keysMarkedRequired = Object.keys(properties).filter(key => getIn(typeObject(properties[key]), 'options.required'))
-  const requiredKeys = unique((options.required || []).concat(keysMarkedRequired))
+  const keysMarkedRequired = Object.keys(properties).filter(key => getIn(typeObject(properties[key]), 'options.required') === true)
+  options.required = unique((options.required || []).concat(keysMarkedRequired))
   let description
   if (notEmpty(properties)) {
     const keyDescriptions = Object.keys(properties).map((key) => {
       const meta = compact([
         properties[key].name,
-        (requiredKeys.includes(key) ? 'required' : undefined)
+        (options.required.includes(key) ? 'required' : undefined)
       ])
       return notEmpty(meta) ? `${key} (${meta.join(', ')})` : key
     })
@@ -200,8 +200,8 @@ function ObjectType (properties, options = {}) {
     options,
     validate: (value) => {
       if (typeof value !== 'object') return `must be of type ${title} but was ${typeOf(value)}`
-      if (notEmpty(requiredKeys)) {
-        const missingKeys = difference(requiredKeys, Object.keys(value))
+      if (notEmpty(options.required)) {
+        const missingKeys = difference(options.required, Object.keys(value))
         if (notEmpty(missingKeys)) return `is missing the following required keys: ${missingKeys.join(', ')}`
       }
 
