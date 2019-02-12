@@ -43,7 +43,6 @@ if (error) {
 
 ## TODO
 
-* Test custom validation function/type
 * More test cases: Enum, nested objects/arrays, AnyOf, AllOf, custom types, optional arrays (ArrayOrScalar)
 * Test ability to easily generate documentation etc. based on a nested complex type (good navigability and meta data)
 * Change ajv to be a dev dependency and use it to test compliance with json schema

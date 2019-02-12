@@ -26,8 +26,8 @@ function typeObject (type) {
 
 function typeError (type, value) {
   const result = typeObject(type).validate(value)
-  if (result === false || result === undefined) return undefined
-  if (result === true) return 'is invalid'
+  if (result === true || result === undefined) return undefined
+  if (result === false) return 'is invalid'
   return result
 }
 
@@ -163,7 +163,7 @@ function TypeOf (type, options = {}) {
 }
 
 function Validate (validate, options = {}) {
-  const description = options.description || valudate.name || 'Unnamed validate function'
+  const description = options.description || validate.name || 'Unnamed validate function'
   return {
     title: 'Validate',
     description,

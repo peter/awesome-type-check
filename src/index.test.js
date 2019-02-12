@@ -7,7 +7,8 @@ test('ObjectType without options - checks types of keys, keys are optional, addi
     {
       name: 'string',
       username: Username,
-      status: Enum(['active', 'inactive'])
+      status: Enum(['active', 'inactive']),
+      bonus: (v) => typeof v === 'number' && v > 0
     }
   )
 
@@ -16,6 +17,12 @@ test('ObjectType without options - checks types of keys, keys are optional, addi
   expect(typeError(User, {foo: 1})).toEqual(undefined)
 
   expect(typeError(User, {name: 'Joe', username: 'foobar', status: 'active'})).toEqual(undefined)
+
+  expect(typeError(User, {name: 'Joe', username: 'foobar', status: 'active', bonus: 1})).toEqual(undefined)
+
+  expect(typeError(User, {name: 'Joe', username: 'foobar', status: 'active', bonus: 0})).toEqual({
+    bonus: 'is invalid'
+  })
 
   expect(typeError(User, {name: 'Joe', username: null, status: 'active'})).toEqual({
     username: 'must be of type string but was null'
