@@ -14,7 +14,7 @@ This library basically provides:
 * Form and model validation
 * Type checking options objects and other function arguments
 * Validating types of properties passed to React components
-* Ability to generate API documentation from types. Types are just data structures with validation functions
+* Ability to generate API documentation from types. Types are just JSON schema data structures with validate functions
 
 ## Installation
 
