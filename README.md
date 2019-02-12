@@ -2,6 +2,13 @@
 
 Runtime type checks / schema validation for JavaScript objects and values.
 
+This library generates types that are on a JSON schema data format and this makes the types easy to parse and generate documentation from. You can use a JSON schema validator like [ajv](https://github.com/epoberezkin/ajv) to validate the types if you like but this library has validation logic built in (with a subset of the JSON schema rules).
+
+This library basically provides:
+
+* A thin layer of functions that provide syntactic sugar on top of JSON schema
+* Extensions to JSON schema - essentially the addition of a `validate` function - that allows us to do typeof/instanceof checks as well as any custom validation that we need for our types. JSON schema is great for validating JSON data but JSON data only has six different types (object, array, string, number, boolean, and null). In JavaScript we typically need to validate more types and this library aims to help with that.
+
 ## Use Cases for this Library
 
 * Form and model validation
@@ -43,16 +50,12 @@ if (error) {
 
 ## TODO
 
-* More test cases: Enum, nested objects/arrays, AnyOf, AllOf, custom types, optional arrays (ArrayOrScalar)
 * Test ability to easily generate documentation etc. based on a nested complex type (good navigability and meta data)
-* Change ajv to be a dev dependency and use it to test compliance with json schema
+* More test cases: Enum, nested objects/arrays, AnyOf, AllOf, custom types, optional arrays (ArrayOrScalar)
 * More syntactic sugar for string types: 'string|number!'
 
-* Integration with React. Ability to turn off in production
-
-* Benchmark with schema
-
-* Remove ajv dependencies and schema if we are not going to use them
+* Integration with React when used as PropTypes. Ability to turn off in production
+* PropTypes compatibility layer?
 
 * Apply to the assertValidOptions use case
 
