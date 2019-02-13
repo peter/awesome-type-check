@@ -51,7 +51,7 @@ A type can be specified as:
 
 * A string that represents a type returned by the `typeOf` function, i.e. `number`, `string`, `boolean`, `function`, `object`, `array` etc. The `typeOf` function used by this library is essentially the built-in JavaScript `typeof` with a few extensions such as `null`, `undefined`, `array`, `date`, `error`, `regexp`.
 * A `validate` function. The validate function can either be a predicate that returns `true` or `false` or a function that returns `undefined` or errors. If the validate function returns `true` or `undefined` then the type is considered valid and otherwise it is considered invalid. Errors are typically an array of `TypeError` objects.
-* A JSON schema object that optionally contains a validate function
+* A JSON schema object that optionally contains a `validate` function
 
 Here is an example of a type represented as a string:
 
@@ -85,7 +85,7 @@ isValid(isEven, 2) // => true
 isValid(isEven, 3) // => false
 ```
 
-Here is the same function as a validate function that returns `undefined` or errors:
+Here is the same type as a validate function that returns `undefined` or errors:
 
 ```javascript
 const {typeErrors, TypeError} = require('awesome-type-check')
