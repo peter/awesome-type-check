@@ -1,9 +1,11 @@
-const {merge, notEmpty, array, isArray, flatten, compact, difference, assertValidOptions, mapObj, typeOf, getIn, unique} = require('./util')
-const TypeError = require('./type_error')
+import {merge, notEmpty, array, isArray, flatten, compact, difference, assertValidOptions, mapObj, typeOf, getIn, unique} from './util'
+import {TypeError} from './type_error'
 
-const JSON_TYPES = ['array', 'object', 'string', 'number', 'boolean', 'null']
+export {TypeError} from './type_error'
 
-function toString (type) {
+export const JSON_TYPES = ['array', 'object', 'string', 'number', 'boolean', 'null']
+
+export function toString (type) {
   if (typeOf(type) === 'string') {
     return type
   } else if (type.title) {
@@ -17,7 +19,7 @@ function toString (type) {
   }
 }
 
-function typeObject (type) {
+export function typeObject (type) {
   if (typeOf(type) === 'string') {
     return TypeOf(type)
   } else if (typeOf(type) === 'function') {
@@ -27,12 +29,12 @@ function typeObject (type) {
   }
 }
 
-function typeOfError (type, value, options = {}) {
+export function typeOfError (type, value, options = {}) {
   const message = `must be of type ${toString(type)} but was ${typeOf(value)}`
   return new TypeError(type, value, message, merge(options, {code: 'typeof'}))
 }
 
-function typeErrors (type, value, path = []) {
+export function typeErrors (type, value, path: string[] = []) {
   const _typeObject = typeObject(type)
   if (notEmpty(_typeObject.type) && !array(_typeObject.type).find(t => typeOf(value) === t || t === 'any')) {
     return [typeOfError(_typeObject, value, {path})]
@@ -43,7 +45,7 @@ function typeErrors (type, value, path = []) {
   if (result === false) return [new TypeError(type, value, 'is invalid', {path})]
   return array(result).map((error) => {
     if (error instanceof TypeError) {
-      const errorPath = error.path || path
+      const errorPath: string[] = error.path || path
       if (notEmpty(errorPath)) error.path = errorPath
       return error
     } else {
@@ -52,26 +54,32 @@ function typeErrors (type, value, path = []) {
   })
 }
 
-function isValid (type, value) {
+export function isValid (type, value) {
   const errors = typeErrors(type, value)
   return errors === undefined ? true : false
 }
 
-function assertType (type, value) {
+export function assertType (type, value) {
   const errors = typeErrors(type, value)
   if (errors) {
     throw new TypeError(type, value, `value has invalid type - there are ${errors.length} type errors`, {childErrors: errors})
   }
 }
 
-function StringType (options = {}) {
+interface StringTypeOptions {
+  minLength?: number
+  maxLength?: number
+  pattern?: string
+}
+
+export function StringType (options: StringTypeOptions = {}) {
   assertValidOptions(options, {minLength: 'number', maxLength: 'number', pattern: 'string'})
   let description
   if (notEmpty(options)) {
     const optionsDescriptions = []
     if (options.minLength) optionsDescriptions.push(`minimum length ${options.minLength}`)
     if (options.maxLength) optionsDescriptions.push(`maximum length ${options.maxLength}`)
-    if (options.pattern) optionsDescriptions.push(`matching pattern ${options.pattern}`)
+    if (options.pattern) optionsDescriptions.push(`pattern ${options.pattern}`)
     description = `String with ${optionsDescriptions.join(' and ')}`
   }
   const type = compact({
@@ -97,7 +105,12 @@ function StringType (options = {}) {
   return type
 }
 
-function NumberType (options = {}) {
+interface NumberTypeOptions {
+  minimum?: number
+  maximum?: number
+}
+
+export function NumberType (options: NumberTypeOptions = {}) {
   assertValidOptions(options, {minimum: 'number', maximum: 'number'})
   let description
   if (notEmpty(options)) {
@@ -126,15 +139,15 @@ function NumberType (options = {}) {
   return type
 }
 
-function BoolType (options = {}) {
+export function BoolType (options = {}) {
   return TypeOf('boolean', options)
 }
 
-function NullType (options = {}) {
+export function NullType (options = {}) {
   return TypeOf('null', options)
 }
 
-function Enum (values, options = {}) {
+export function Enum (values, options = {}) {
   const description = `Enum(${values.join(', ')})`
   const type = {
     title: 'Enum',
@@ -152,7 +165,7 @@ function Enum (values, options = {}) {
   return type
 }
 
-function InstanceOf (klass, options = {}) {
+export function InstanceOf (klass, options = {}) {
   const description = `InstanceOf(${klass.name})`
   const type = {
     title: 'InstanceOf',
@@ -170,7 +183,7 @@ function InstanceOf (klass, options = {}) {
   return type
 }
 
-function TypeOf (type, options = {}) {
+export function TypeOf (type, options = {}) {
   if (typeOf(type) !== 'string') throw new Error(`type argument to TypeOf must be a string but was of type ${typeOf(type)}`)
   const _type = compact({
     type: JSON_TYPES.includes(type) ? type : undefined,
@@ -189,7 +202,7 @@ function TypeOf (type, options = {}) {
   return _type
 }
 
-function Validate (validate, options = {}) {
+export function Validate (validate: Function, options: any = {}) {
   const description = options.description || validate.name || 'Unnamed validate function'
   return {
     title: 'Validate',
@@ -199,10 +212,17 @@ function Validate (validate, options = {}) {
   }
 }
 
-function ObjectType (properties, options = {}) {
+interface ObjectTypeOptions {
+  title?: string
+  required?: string[]
+  additionalProperties?: boolean
+  patternProperties?: object
+}
+
+export function ObjectType (properties, options: ObjectTypeOptions = {}) {
   assertValidOptions(options, {title: 'string', required: ['string'], additionalProperties: 'boolean', patternProperties: 'object'})
   properties = mapObj(properties, (k, v) => typeObject(v))
-  const keysMarkedRequired = Object.keys(properties).filter(key => getIn(typeObject(properties[key]), 'options.isRequired') === true)
+  const keysMarkedRequired: string[] = Object.keys(properties).filter(key => getIn(typeObject(properties[key]), 'options.isRequired') === true)
   options.required = unique((options.required || []).concat(keysMarkedRequired))
   let description
   if (notEmpty(properties)) {
@@ -244,7 +264,7 @@ function ObjectType (properties, options = {}) {
       const patternKeys = {}
       if (options.patternProperties) {
         const patternErrors = flatten(compact(Object.keys(value).map((key) => {
-          const pattern = Object.keys(options.patternProperties).find(pattern => key.match(new RegExp(pattern)))
+          const pattern = Object.keys(options.patternProperties).find(pattern => new RegExp(pattern).test(pattern))
           if (pattern) {
             const patternType = options.patternProperties[pattern]
             return typeErrors(patternType, value[key], path.concat([key]))
@@ -264,15 +284,20 @@ function ObjectType (properties, options = {}) {
   return type
 }
 
-function ExactObject (properties, options = {}) {
+export function ExactObject (properties, options = {}) {
   return ObjectType(properties, merge(options, {additionalProperties: false}))
 }
 
-function ObjectOf (valueType, options = {}) {
+export function ObjectOf (valueType, options = {}) {
   return ObjectType({}, merge(options, {patternProperties: {'.*': valueType}}))
 }
 
-function ArrayType (items = 'any', options = {}) {
+interface ArrayTypeOptions {
+  minLength?: number
+  maxLength?: number
+}
+
+export function ArrayType (items = 'any', options: ArrayTypeOptions = {}) {
   items = typeObject(items)
   assertValidOptions(options, {minLength: 'number', maxLength: 'number'})
   const description = `Array with items ${toString(items)}`
@@ -301,13 +326,13 @@ function ArrayType (items = 'any', options = {}) {
   return type
 }
 
-function Required (type) {
+export function Required (type) {
   const _typeObject = typeObject(type)
   const options = merge(_typeObject.options, {isRequired: true})
   return merge(_typeObject, {options})
 }
 
-function AllOf (types, options = {}) {
+export function AllOf (types, options = {}) {
   types = types.map(typeObject)
   const description = `AllOf(${types.map(toString).join(', ')})`
   return {
@@ -325,7 +350,7 @@ function AllOf (types, options = {}) {
   }
 }
 
-function AnyOf (types, options = {}) {
+export function AnyOf (types, options = {}) {
   types = types.map(typeObject)
   const description = `AnyOf(${types.map(toString).join(', ')})`
   const type = {
@@ -343,27 +368,4 @@ function AnyOf (types, options = {}) {
     }
   }
   return type
-}
-
-module.exports = {
-  TypeError,
-  typeErrors,
-  isValid,
-  assertType,
-  typeObject,
-  StringType,
-  NumberType,
-  BoolType,
-  NullType,
-  ObjectType,
-  ExactObject,
-  ObjectOf,
-  ArrayType,
-  Enum,
-  InstanceOf,
-  TypeOf,
-  Validate,
-  Required,
-  AllOf,
-  AnyOf
 }

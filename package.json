@@ -1,10 +1,12 @@
 {
   "name": "awesome-type-check",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "Runtime type checks / schema validation for JavaScript objects and values.",
-  "main": "src/index.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
-    "test": "jest"
+    "build": "tsc",
+    "test": "yarn build && jest"
   },
   "repository": {
     "type": "git",
@@ -14,7 +16,8 @@
   "license": "ISC",
   "devDependencies": {
     "ajv": "6.9.1",
-    "jest": "24.1.0"
+    "jest": "24.1.0",
+    "typescript": "3.3.3"
   },
   "dependencies": {}
 }
