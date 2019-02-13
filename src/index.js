@@ -34,7 +34,7 @@ function typeOfError (type, value, options = {}) {
 
 function typeErrors (type, value, path = []) {
   const _typeObject = typeObject(type)
-  if (notEmpty(_typeObject.type) && !array(_typeObject.type).find(t => typeOf(value) === t)) {
+  if (notEmpty(_typeObject.type) && !array(_typeObject.type).find(t => typeOf(value) === t || t === 'any')) {
     return [typeOfError(_typeObject, value, {path})]
   }
   if (!_typeObject.validate) return undefined
@@ -174,11 +174,12 @@ function TypeOf (type, options = {}) {
   if (typeOf(type) !== 'string') throw new Error(`type argument to TypeOf must be a string but was of type ${typeOf(type)}`)
   const _type = compact({
     type: JSON_TYPES.includes(type) ? type : undefined,
-    title: 'TypeOf',
+    title: type,
+    description: `TypeOf(${type})`,
     arg: type,
     options,
     validate: (value) => {
-      if (typeOf(value) !== type) {
+      if (typeOf(value) !== type && type !== 'any') {
         return [typeOfError(_type, value)]
       } else {
         return undefined

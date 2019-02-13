@@ -2,7 +2,7 @@ const Ajv = require('ajv')
 const ajv = new Ajv()
 const {mapObj} = require('./util')
 const TypeError = require('./type_error')
-const {typeErrors, ObjectType, ExactObject, ObjectOf, StringType, Enum, TypeOf, Required} = require('./index')
+const {typeErrors, ObjectType, ArrayType, ExactObject, ObjectOf, StringType, Enum, TypeOf, Required} = require('./index')
 
 function assertSchema (schema, data) {
   ajv.validate(schema, data)
@@ -146,6 +146,58 @@ test('ObjectOf - can specify an object with a certain value type (via patternPro
   expect(typeErrors(Users, {})).toEqual(undefined)
 
   expectObjectErrors(Users, {foo: 1}, {'foo': 'must be of type User (ObjectType) but was number'})
+})
+
+test('we can get good error metadata (type/value/path) from nested data structures (objects/arrays)', () => {
+  const NestedData = ObjectType({
+    name: Required('string'),
+    topLevelNumbers: ArrayType('number'),
+    foo: ObjectType({
+      bar: ArrayType(ObjectType({
+        baz: 'boolean'
+      }))
+    })
+  })
+
+  expect(typeErrors(NestedData, {name: 'joe'})).toEqual(undefined)
+  assertSchema(NestedData, {name: 'joe'})
+
+  const topLevelErrors = typeErrors(NestedData, {})
+  expect(topLevelErrors.length).toEqual(1)
+  expect(topLevelErrors[0].type).toEqual(NestedData)
+  expect(topLevelErrors[0].value).toEqual({})
+  expect(topLevelErrors[0].path).toEqual(undefined)
+  expect(topLevelErrors[0].code).toEqual('required')
+  expect(topLevelErrors[0].message).toEqual('is missing the following required keys: name')
+
+  const keyErrors = typeErrors(NestedData, {name: 123})
+  expect(keyErrors.length).toEqual(1)
+  expect(keyErrors[0].type).toEqual(NestedData.properties.name)
+  expect(keyErrors[0].value).toEqual(123)
+  expect(keyErrors[0].path).toEqual(['name'])
+  expect(keyErrors[0].code).toEqual('typeof')
+  expect(keyErrors[0].message).toEqual('must be of type string but was number')
+
+  const arrayErrors = typeErrors(NestedData, {name: 'joe', topLevelNumbers: ['foo', 1, 'bar']})
+  expect(arrayErrors.length).toEqual(2)
+  expect(arrayErrors[0].type).toEqual(NestedData.properties.topLevelNumbers.items)
+  expect(arrayErrors[0].value).toEqual('foo')
+  expect(arrayErrors[0].path).toEqual(['topLevelNumbers', 0])
+  expect(arrayErrors[0].code).toEqual('typeof')
+  expect(arrayErrors[0].message).toEqual('must be of type number but was string')
+
+  expect(arrayErrors[1].type).toEqual(NestedData.properties.topLevelNumbers.items)
+  expect(arrayErrors[1].value).toEqual('bar')
+  expect(arrayErrors[1].path).toEqual(['topLevelNumbers', 2])
+  expect(arrayErrors[1].code).toEqual('typeof')
+  expect(arrayErrors[1].message).toEqual('must be of type number but was string')
+
+  const nestedErrors = typeErrors(NestedData, {name: 'joe', foo: {bar: [{baz: 123}]}})
+  expect(nestedErrors.length).toEqual(1)
+  expect(nestedErrors[0].type).toEqual(NestedData.properties.foo.properties.bar.items.properties.baz)
+  expect(nestedErrors[0].path).toEqual(['foo', 'bar', 0, 'baz'])
+  expect(nestedErrors[0].code).toEqual('typeof')
+  expect(nestedErrors[0].message).toEqual('must be of type boolean but was number')
 })
 
 test('typeErrors - validates schema object type property', () => {

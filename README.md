@@ -49,7 +49,7 @@ if (errors) {
 
 A type can be specified as:
 
-* A string that represents a type returned by the `typeOf` function, i.e. `number`, `string`, `boolean`, `function`, `object`, `array` etc. The `typeOf` function used by this library is essentially the built-in JavaScript `typeof` with a few extensions such as `null`, `undefined`, `array`, `date`, `error`, `regexp`.
+* A string that represents a type returned by the `typeOf` function, i.e. `number`, `string`, `boolean`, `function`, `object`, `array` etc. The `typeOf` function used by this library is essentially the built-in JavaScript `typeof` with a few extensions such as `null`, `undefined`, `array`, `date`, `error`, `regexp`. A string type can also have the value `any` which will validate against all values.
 * A `validate` function. The validate function can either be a predicate that returns `true` or `false` or a function that returns `undefined` or errors. If the validate function returns `true` or `undefined` then the type is considered valid and otherwise it is considered invalid. Errors are typically an array of `TypeError` objects.
 * A JSON schema object that optionally contains a `validate` function
 
@@ -104,21 +104,17 @@ isValid(isEven, 3) // => false
 
 ## TODO
 
-* Test errors in nested types: object - array - object
 * Test ability to easily generate documentation etc. based on a nested complex type (good navigability and meta data)
 * More test cases: Enum, nested objects/arrays, AnyOf, AllOf, custom types, optional arrays (ArrayOrScalar)
 * More syntactic sugar for string types: 'string|number!'
 
-* Need to fix required option to not have two conflicting meanings
+* TypeScript or Babel
+* Create a JSFiddle with unpkg (https://medium.com/cameron-nokes/the-30-second-guide-to-publishing-a-typescript-package-to-npm-89d93ff7bccd)
 
-* Integration with React when used as PropTypes. Ability to turn off in production
-* PropTypes compatibility layer?
-
-* Create a JSFiddle with unpkg
+* Integration with React when used as PropTypes. Ability to turn off in production. PropTypes compatibility layer?
 
 * Apply to the assertValidOptions use case
 
-* TypeScript
 * Linting
 * Jest
 * toString on types?

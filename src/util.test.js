@@ -1,6 +1,6 @@
 const {assertValidOptions} = require('./util')
 
-test('assertValidOptions - can check all types supported by typeOf plus arrays', () => {
+test('assertValidOptions - can check all types supported by the typeOf function', () => {
   const validOptions = {
     foo: 'string',
     bar: 'number',

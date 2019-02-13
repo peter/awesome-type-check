@@ -1,6 +1,6 @@
 {
   "name": "awesome-type-check",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Runtime type checks / schema validation for JavaScript objects and values.",
   "main": "src/index.js",
   "scripts": {
