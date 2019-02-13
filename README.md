@@ -2,7 +2,7 @@
 
 A JavaScript library that provides runtime type checks / schema validation for JavaScript objects and values.
 
-This library generates types that are on JSON schema format and this makes the types easy to parse and generate documentation from. You can use a JSON schema validator like [ajv](https://github.com/epoberezkin/ajv) to validate the types if you like but this library has validation logic built in (with a subset of the JSON schema rules).
+This library generates types that are on [JSON schema](https://json-schema.org/understanding-json-schema/) format and this makes the types easy to parse and generate documentation from. You can use a JSON schema validator like [ajv](https://github.com/epoberezkin/ajv) (and [ajv-keywords](https://github.com/epoberezkin/ajv-keywords)) to validate the types if you like but this library has validation logic built in (with a subset of the JSON schema rules).
 
 This library basically provides:
 
