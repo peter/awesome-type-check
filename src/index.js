@@ -1,4 +1,4 @@
-const {merge, notEmpty, array, flatten, compact, difference, assertValidOptions, mapObj, typeOf, getIn, unique} = require('./util')
+const {merge, notEmpty, array, isArray, flatten, compact, difference, assertValidOptions, mapObj, typeOf, getIn, unique} = require('./util')
 const TypeError = require('./type_error')
 
 const JSON_TYPES = ['array', 'object', 'string', 'number', 'boolean', 'null']
@@ -10,6 +10,8 @@ function toString (type) {
     return type.title
   } else if (type.name) {
     return type.name
+  } else if (notEmpty(type.type)) {
+    return array(type.type).join('|')
   } else {
     return 'unnamed custom type'
   }
@@ -25,8 +27,18 @@ function typeObject (type) {
   }
 }
 
+function typeOfError (type, value, options = {}) {
+  const message = `must be of type ${toString(type)} but was ${typeOf(value)}`
+  return new TypeError(type, value, message, merge(options, {code: 'typeof'}))
+}
+
 function typeErrors (type, value, path = []) {
-  const result = typeObject(type).validate(value, path)
+  const _typeObject = typeObject(type)
+  if (notEmpty(_typeObject.type) && !array(_typeObject.type).find(t => typeOf(value) === t)) {
+    return [typeOfError(_typeObject, value, {path})]
+  }
+  if (!_typeObject.validate) return undefined
+  const result = _typeObject.validate(value, path)
   if (result === true || result === undefined) return undefined
   if (result === false) return [new TypeError(type, value, 'is invalid', {path})]
   return array(result).map((error) => {
@@ -68,7 +80,7 @@ function StringType (options = {}) {
     description,
     options,
     validate: (value) => {
-      if (typeOf(value) !== 'string') return new TypeError(type, value, `must be of type string but was ${typeOf(value)}`, {code: 'typeof'})
+      if (typeOf(value) !== 'string') return [typeOfError(type, value)]
       const errors = []
       if (options.minLength !== undefined && value.length < options.minLength) {
         errors.push(new TypeError(type, value, `must be at least ${options.minLength} characters long but was only ${value.length} characters`, {code: 'minLength'}))
@@ -100,7 +112,7 @@ function NumberType (options = {}) {
     description,
     options,
     validate: (value) => {
-      if (typeOf(value) !== 'number') return new TypeError(type, value, `must be of type number but was ${typeOf(value)}`, {code: 'typeof'})
+      if (typeOf(value) !== 'number') return [typeOfError(type, value)]
       const errors = []
       if (options.minimum !== undefined && value < options.minimum) {
         errors.push(new TypeError(type, value, `must be at least ${options.minimum} was only ${value}`, {code: 'minimum'}))
@@ -167,7 +179,7 @@ function TypeOf (type, options = {}) {
     options,
     validate: (value) => {
       if (typeOf(value) !== type) {
-        return new TypeError(_type, value, `value "${value}" (type ${typeOf(value)}) must be of type ${type}`, {code: 'typeof'})
+        return [typeOfError(_type, value)]
       } else {
         return undefined
       }
@@ -213,7 +225,7 @@ function ObjectType (properties, options = {}) {
     required: options.required,
     options,
     validate: (value, path = []) => {
-      if (typeof value !== 'object') return [new TypeError(type, value, `must be of type ${title} but was ${typeOf(value)}`, {path, code: 'typeof'})]
+      if (typeof value !== 'object') return [typeOfError(type, value, {path})]
       const errors = []
       if (notEmpty(options.required)) {
         const missingKeys = difference(options.required, Object.keys(value))
@@ -270,7 +282,7 @@ function ArrayType (items = 'any', options = {}) {
     items,
     options,
     validate: (value, path = []) => {
-      if (!Array.isArray(value)) return [new TypeError(type, value, `must be array but was ${typeOf(value)}`, {path, code: 'typeof'})]
+      if (!Array.isArray(value)) return [typeOfError(type, value, {path})]
       const errors = []
       const itemErrors = flatten(compact(value.map((item, index) => {
         return typeErrors(items, item, path.concat([index]))

@@ -6,7 +6,7 @@ This library generates types that are on [JSON schema](https://json-schema.org/u
 
 This library basically provides:
 
-* A thin layer of functions with syntactic sugar on top of JSON schema
+* A thin layer of syntactic sugar on top of JSON schema
 * Extensions to JSON schema - essentially the addition of a `validate` function - that allows us to do typeof/instanceof checks as well as any custom validation that we need for our types. JSON schema is great for validating JSON data but JSON data only has six different types (object, array, string, number, boolean, and null). In JavaScript we typically need to validate more types and this library aims to help with that.
 
 ## Use Cases for this Library

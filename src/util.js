@@ -143,6 +143,7 @@ function assertValidOptions (options, validOptionTypes, assertConfig = {}) {
 }
 
 module.exports = {
+  isArray,
   empty,
   notEmpty,
   array,

@@ -55,7 +55,7 @@ test('ObjectType without options - checks types of keys, keys are optional, addi
   })
 
   expectObjectErrors(User, {name: 'Joe', username: null, status: 'active'}, {
-    username: 'must be of type string but was null'
+    username: 'must be of type StringType but was null'
   })
 
   expectObjectErrors(User, {name: 'Joe', username: 'j', status: 'foobar'}, {
@@ -146,4 +146,14 @@ test('ObjectOf - can specify an object with a certain value type (via patternPro
   expect(typeErrors(Users, {})).toEqual(undefined)
 
   expectObjectErrors(Users, {foo: 1}, {'foo': 'must be of type User (ObjectType) but was number'})
+})
+
+test('typeErrors - validates schema object type property', () => {
+  const schema = {type: ['string', 'number', 'boolean']}
+  expect(typeErrors(schema, 'foobar')).toEqual(undefined)
+  expect(typeErrors(schema, 123)).toEqual(undefined)
+  expect(typeErrors(schema, false)).toEqual(undefined)
+  expect(typeErrors(schema, []).map(e => e.message)).toEqual(['must be of type string|number|boolean but was array'])
+
+  expect(typeErrors({type: 'array'}, [])).toEqual(undefined)
 })
