@@ -49,17 +49,19 @@ if (errors) {
 
 A type can be specified as:
 
-* A string that represents a type returned by the `typeOf` function, i.e. `number`, `string`, `boolean`, `function`, `object`, `array` etc.
-* A validate function. The validate function can either be a predicate that returns `true` or `false` or a function that returns `undefined` or errors. If the validate function returns `true` or `undefined` then the type is considered valid and otherwise it is considered invalid. Errors are typically an array of `TypeError` objects.
+* A string that represents a type returned by the `typeOf` function, i.e. `number`, `string`, `boolean`, `function`, `object`, `array` etc. The `typeOf` function used by this library is essentially the built-in JavaScript `typeof` with a few extensions such as `null`, `undefined`, `array`, `date`, `error`, `regexp`.
+* A `validate` function. The validate function can either be a predicate that returns `true` or `false` or a function that returns `undefined` or errors. If the validate function returns `true` or `undefined` then the type is considered valid and otherwise it is considered invalid. Errors are typically an array of `TypeError` objects.
 * A JSON schema object that optionally contains a validate function
 
 Here is an example of a type represented as a string:
 
 ```javascript
-const {typeErrors} = require('awesome-type-check')
+const {typeErrors, isValid} = require('awesome-type-check')
 const myType = 'number'
 typeErrors(myType, 123) // => undefined
+isValid(myType, 123) // => true
 typeErrors(myType, 'foobar') // => [ { Error: value "foobar" (type string) must be of type number } ]
+isValid(myType, 'foobar') // => false
 ```
 
 String types can be converted to JSON schema objects with `typeObject`:
