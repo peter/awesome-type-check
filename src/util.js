@@ -31,6 +31,20 @@ function notEmpty (value) {
   return !empty(value)
 }
 
+function array (value) {
+  if (nil(value)) return []
+  return isArray(value) ? value : [value]
+}
+
+function concat (...arrays) {
+  return arrays.filter(notNil).reduce((a1, a2) => a1.concat(a2), [])
+}
+
+// NOTE: only flattens one level
+function flatten (array) {
+  return concat(...array)
+}
+
 function merge (object1, object2) {
   return Object.assign({}, object1, object2)
 }
@@ -105,7 +119,7 @@ function assertValidOptions (options, validOptionTypes, assertConfig = {}) {
 		const actualType = typeOf(options[key])
     let expectedType = validOptionTypes[key]
     if (typeOf(expectedType) === 'array') expectedType = 'array'
-		if (assertConfig.additionalKeys !== true && !(key in validOptionTypes)) {
+		if (assertConfig.additionalKeys === false && !(key in validOptionTypes)) {
 			throw new Error(
 				`Unrecognized options key ${key}, should be one of ${Object.keys(validOptionTypes).join(
 					', '
@@ -131,6 +145,8 @@ function assertValidOptions (options, validOptionTypes, assertConfig = {}) {
 module.exports = {
   empty,
   notEmpty,
+  array,
+  flatten,
   merge,
   compact,
   getIn,

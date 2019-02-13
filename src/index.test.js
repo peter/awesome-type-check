@@ -1,6 +1,8 @@
 const Ajv = require('ajv')
 const ajv = new Ajv()
-const {typeError, ObjectType, ExactObject, ObjectOf, StringType, Enum, TypeOf, Required} = require('./index')
+const {mapObj} = require('./util')
+const TypeError = require('./type_error')
+const {typeErrors, ObjectType, ExactObject, ObjectOf, StringType, Enum, TypeOf, Required} = require('./index')
 
 function assertSchema (schema, data) {
   ajv.validate(schema, data)
@@ -12,6 +14,18 @@ function assertSchema (schema, data) {
     error.data = data
     throw error
   }
+}
+
+function expectObjectErrors (type, value, expectedErrorMessages) {
+  const errors = typeErrors(type, value)
+  const actualErrorMessages = errors.reduce((acc, error) => {
+    acc[error.path[0]] = error.message
+    return acc
+  }, {})
+  expect(actualErrorMessages).toEqual(expectedErrorMessages)
+  expect(errors.every(e => e instanceof TypeError))
+  expect(errors.every(e => e.value === value))
+  expect(errors.every(e => e.type === type[e.path[0]]))
 }
 
 const Username = StringType({minLength: 3, maxLength: 50, pattern: '^[a-z0-9_-]+$'})
@@ -28,23 +42,23 @@ test('ObjectType without options - checks types of keys, keys are optional, addi
 
   assertSchema(User, {})
 
-  expect(typeError(User, {})).toEqual(undefined)
+  expect(typeErrors(User, {})).toEqual(undefined)
 
-  expect(typeError(User, {foo: 1})).toEqual(undefined)
+  expect(typeErrors(User, {foo: 1})).toEqual(undefined)
 
-  expect(typeError(User, {name: 'Joe', username: 'foobar', status: 'active'})).toEqual(undefined)
+  expect(typeErrors(User, {name: 'Joe', username: 'foobar', status: 'active'})).toEqual(undefined)
 
-  expect(typeError(User, {name: 'Joe', username: 'foobar', status: 'active', bonus: 1})).toEqual(undefined)
+  expect(typeErrors(User, {name: 'Joe', username: 'foobar', status: 'active', bonus: 1})).toEqual(undefined)
 
-  expect(typeError(User, {name: 'Joe', username: 'foobar', status: 'active', bonus: 0})).toEqual({
+  expectObjectErrors(User, {name: 'Joe', username: 'foobar', status: 'active', bonus: 0}, {
     bonus: 'is invalid'
   })
 
-  expect(typeError(User, {name: 'Joe', username: null, status: 'active'})).toEqual({
+  expectObjectErrors(User, {name: 'Joe', username: null, status: 'active'}, {
     username: 'must be of type string but was null'
   })
 
-  expect(typeError(User, {name: 'Joe', username: 'j', status: 'foobar'})).toEqual({
+  expectObjectErrors(User, {name: 'Joe', username: 'j', status: 'foobar'}, {
     status: 'has value "foobar" (type string) but must be one of these values: active, inactive',
     username: 'must be at least 3 characters long but was only 1 characters'
   })
@@ -62,14 +76,14 @@ test('ObjectType - complains about missing keys given required option', () => {
     }
   )
 
-  expect(typeError(User, {})).toEqual('is missing the following required keys: username, status')
+  expect(typeErrors(User, {}).map(e => e.message)).toEqual(['is missing the following required keys: username, status'])
 
-  expect(typeError(User, {foo: 1})).toEqual('is missing the following required keys: username, status')
+  expect(typeErrors(User, {foo: 1}).map(e => e.message)).toEqual(['is missing the following required keys: username, status'])
 
-  expect(typeError(User, {name: 'Joe', username: 'foobar'})).toEqual('is missing the following required keys: status')
+  expect(typeErrors(User, {name: 'Joe', username: 'foobar'}).map(e => e.message)).toEqual(['is missing the following required keys: status'])
 
   const validUser = {name: 'Joe', username: 'foobar', status: 'active'}
-  expect(typeError(User, validUser)).toEqual(undefined)
+  expect(typeErrors(User, validUser)).toEqual(undefined)
 
   assertSchema(User, validUser)
 })
@@ -77,7 +91,7 @@ test('ObjectType - complains about missing keys given required option', () => {
 test('ObjectType - complains about missing keys marked as required', () => {
   const User = ObjectType(
     {
-      name: TypeOf('string', {required: true}),
+      name: TypeOf('string', {isRequired: true}),
       username: Required(Username),
       status: Enum(['active', 'inactive']),
       foobar: 'boolean'
@@ -87,13 +101,13 @@ test('ObjectType - complains about missing keys marked as required', () => {
     }
   )
 
-  expect(typeError(User, {})).toEqual('is missing the following required keys: status, name, username')
-  expect(typeError(User, {foo: 1})).toEqual('is missing the following required keys: status, name, username')
+  expect(typeErrors(User, {}).map(e => e.message)).toEqual(['is missing the following required keys: status, name, username'])
+  expect(typeErrors(User, {foo: 1}).map(e => e.message)).toEqual(['is missing the following required keys: status, name, username'])
 
-  expect(typeError(User, {name: 'Joe', username: 'foobar'})).toEqual('is missing the following required keys: status')
+  expect(typeErrors(User, {name: 'Joe', username: 'foobar'}).map(e => e.message)).toEqual(['is missing the following required keys: status'])
 
   const validUser = {name: 'Joe', username: 'foobar', status: 'active'}
-  expect(typeError(User, validUser)).toEqual(undefined)
+  expect(typeErrors(User, validUser)).toEqual(undefined)
 
   assertSchema(User, validUser)
 })
@@ -109,11 +123,11 @@ test('ObjectType - complains about invalid keys with additionalProperties: false
 
   assertSchema(User, {})
 
-  expect(typeError(User, {})).toEqual(undefined)
+  expect(typeErrors(User, {})).toEqual(undefined)
 
-  expect(typeError(User, {foo: 1})).toEqual('has the following invalid keys: foo')
+  expect(typeErrors(User, {foo: 1}).map(e => e.message)).toEqual(['has the following invalid keys: foo'])
 
-  expect(typeError(User, {name: 'Joe', username: 'foobar', status: 'active', bar: true})).toEqual('has the following invalid keys: bar')
+  expect(typeErrors(User, {name: 'Joe', username: 'foobar', status: 'active', bar: true}).map(e => e.message)).toEqual(['has the following invalid keys: bar'])
 })
 
 test('ObjectOf - can specify an object with a certain value type (via patternProperties)', () => {
@@ -129,7 +143,7 @@ test('ObjectOf - can specify an object with a certain value type (via patternPro
 
   assertSchema(Users, {})
 
-  expect(typeError(Users, {})).toEqual(undefined)
+  expect(typeErrors(Users, {})).toEqual(undefined)
 
-  expect(typeError(Users, {foo: 1})).toEqual({'foo': 'must be of type User (ObjectType) but was number'})
+  expectObjectErrors(Users, {foo: 1}, {'foo': 'must be of type User (ObjectType) but was number'})
 })

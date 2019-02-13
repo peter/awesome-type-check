@@ -1,4 +1,5 @@
-const {merge, notEmpty, compact, difference, assertValidOptions, mapObj, typeOf, getIn, unique} = require('./util')
+const {merge, notEmpty, array, flatten, compact, difference, assertValidOptions, mapObj, typeOf, getIn, unique} = require('./util')
+const TypeError = require('./type_error')
 
 const JSON_TYPES = ['array', 'object', 'string', 'number', 'boolean', 'null']
 
@@ -24,20 +25,30 @@ function typeObject (type) {
   }
 }
 
-function typeError (type, value) {
-  const result = typeObject(type).validate(value)
+function typeErrors (type, value, path = []) {
+  const result = typeObject(type).validate(value, path)
   if (result === true || result === undefined) return undefined
-  if (result === false) return 'is invalid'
-  return result
+  if (result === false) return [new TypeError(type, value, 'is invalid', {path})]
+  return array(result).map((error) => {
+    if (error instanceof TypeError) {
+      const errorPath = error.path || path
+      if (notEmpty(errorPath)) error.path = errorPath
+      return error
+    } else {
+      return new TypeError(type, value, result, {path})
+    }  
+  })
+}
+
+function isValid (type, value) {
+  const errors = typeErrors(type, value)
+  return errors === undefined ? true : false
 }
 
 function assertType (type, value) {
-  const result = typeError(type, value)
-  if (result) {
-    const message = typeOf(result) === 'string' ? result : 'is invalid'
-    const error = new Error(message)
-    error.typeError = result
-    throw error
+  const errors = typeErrors(type, value)
+  if (errors) {
+    throw new TypeError(type, value, `value has invalid type - there are ${errors.length} type errors`, {childErrors: errors})
   }
 }
 
@@ -51,26 +62,27 @@ function StringType (options = {}) {
     if (options.pattern) optionsDescriptions.push(`matching pattern ${options.pattern}`)
     description = `String with ${optionsDescriptions.join(' and ')}`
   }
-  return compact({
+  const type = compact({
     type: 'string',
     title: 'StringType',
     description,
     options,
     validate: (value) => {
-      if (typeOf(value) !== 'string') return `must be of type string but was ${typeOf(value)}`
+      if (typeOf(value) !== 'string') return new TypeError(type, value, `must be of type string but was ${typeOf(value)}`, {code: 'typeof'})
       const errors = []
-      if (options.minLength !== undefined && value.length < options.minLength) errors.push(`must be at least ${options.minLength} characters long but was only ${value.length} characters`)
-      if (options.maxLength !== undefined && value.length > options.maxLength) errors.push(`must be no more than ${options.maxLength} characters long but was ${value.length} characters`)
-      if (options.pattern && !value.match(new RegExp(options.pattern))) errors.push(`must match pattern ${options.pattern}`)
-      if (errors.length > 1) {
-        return errors
-      } else if (errors.length === 1) {
-        return errors[0]
-      } else {
-        return undefined
+      if (options.minLength !== undefined && value.length < options.minLength) {
+        errors.push(new TypeError(type, value, `must be at least ${options.minLength} characters long but was only ${value.length} characters`, {code: 'minLength'}))
       }
+      if (options.maxLength !== undefined && value.length > options.maxLength) {
+        errors.push(new TypeError(type, value, `must be no more than ${options.maxLength} characters long but was ${value.length} characters`, {code: 'maxLength'}))
+      }
+      if (options.pattern && !value.match(new RegExp(options.pattern))) {
+        errors.push(new TypeError(type, value, `must match pattern ${options.pattern}`, {code: 'pattern'}))
+      }
+      return notEmpty(errors) ? errors : undefined
     }
   })
+  return type
 }
 
 function NumberType (options = {}) {
@@ -82,25 +94,24 @@ function NumberType (options = {}) {
     if (options.maximum !== undefined) optionsDescriptions.push(`maximum length ${options.maximum}`)
     description = `Number with ${optionsDescriptions.join(' and ')}`
   }
-  return compact({
+  const type = compact({
     type: 'number',
     title: 'NumberType',
     description,
     options,
     validate: (value) => {
-      if (typeOf(value) !== 'number') return `must be of type number but was ${typeOf(value)}`
+      if (typeOf(value) !== 'number') return new TypeError(type, value, `must be of type number but was ${typeOf(value)}`, {code: 'typeof'})
       const errors = []
-      if (options.minimum !== undefined && value < options.minimum) errors.push(`must be at least ${options.minimum} was only ${value}`)
-      if (options.maximum !== undefined && value > options.maximum) errors.push(`must be no more than ${options.maximum} but was ${value}`)
-      if (errors.length > 1) {
-        return errors
-      } else if (errors.length === 1) {
-        return errors[0]
-      } else {
-        return undefined
+      if (options.minimum !== undefined && value < options.minimum) {
+        errors.push(new TypeError(type, value, `must be at least ${options.minimum} was only ${value}`, {code: 'minimum'}))
       }
+      if (options.maximum !== undefined && value > options.maximum) {
+        errors.push(new TypeError(type, value, `must be no more than ${options.maximum} but was ${value}`, {code: 'maximum'}))
+      }
+      return notEmpty(errors) ? errors : undefined
     }
   })
+  return type
 }
 
 function BoolType (options = {}) {
@@ -113,53 +124,56 @@ function NullType (options = {}) {
 
 function Enum (values, options = {}) {
   const description = `Enum(${values.join(', ')})`
-  return {
+  const type = {
     title: 'Enum',
     description,
     enum: values,
     options,
     validate: (value) => {
       if (!values.includes(value)) {
-        return `has value "${value}" (type ${typeOf(value)}) but must be one of these values: ${values.join(', ')}`
+        return new TypeError(type, value, `has value "${value}" (type ${typeOf(value)}) but must be one of these values: ${values.join(', ')}`, {code: 'enum'})
       } else {
         return undefined
       }
     }
   }
+  return type
 }
 
 function InstanceOf (klass, options = {}) {
   const description = `InstanceOf(${klass.name})`
-  return {
+  const type = {
     title: 'InstanceOf',
     description,
     arg: klass,
     options,
     validate: (value) => {
       if (!(value instanceof klass)) {
-        return `value "${value}" (type ${typeOf(value)}) must be an instance of ${klass.name}`
+        return new TypeError(type, value, `value "${value}" (type ${typeOf(value)}) must be an instance of ${klass.name}`, {code: 'instanceof'})
       } else {
         return undefined
       }
     }
   }
+  return type
 }
 
 function TypeOf (type, options = {}) {
   if (typeOf(type) !== 'string') throw new Error(`type argument to TypeOf must be a string but was of type ${typeOf(type)}`)
-  return compact({
+  const _type = compact({
     type: JSON_TYPES.includes(type) ? type : undefined,
     title: 'TypeOf',
     arg: type,
     options,
     validate: (value) => {
       if (typeOf(value) !== type) {
-        return `value "${value}" (type ${typeOf(value)}) must be of type ${type}`
+        return new TypeError(_type, value, `value "${value}" (type ${typeOf(value)}) must be of type ${type}`, {code: 'typeof'})
       } else {
         return undefined
       }
     }
   })
+  return _type
 }
 
 function Validate (validate, options = {}) {
@@ -175,7 +189,7 @@ function Validate (validate, options = {}) {
 function ObjectType (properties, options = {}) {
   assertValidOptions(options, {title: 'string', required: ['string'], additionalProperties: 'boolean', patternProperties: 'object'})
   properties = mapObj(properties, (k, v) => typeObject(v))
-  const keysMarkedRequired = Object.keys(properties).filter(key => getIn(typeObject(properties[key]), 'options.required') === true)
+  const keysMarkedRequired = Object.keys(properties).filter(key => getIn(typeObject(properties[key]), 'options.isRequired') === true)
   options.required = unique((options.required || []).concat(keysMarkedRequired))
   let description
   if (notEmpty(properties)) {
@@ -190,7 +204,7 @@ function ObjectType (properties, options = {}) {
     if (options.additionalProperties) description += '. Addtional keys are allowed'
   }
   const title = options.title ? `${options.title} (ObjectType)` : 'ObjectType'
-  return compact({
+  const type = compact({
     type: 'object',
     title,
     description,
@@ -198,45 +212,43 @@ function ObjectType (properties, options = {}) {
     additionalProperties: options.additionalProperties,
     required: options.required,
     options,
-    validate: (value) => {
-      if (typeof value !== 'object') return `must be of type ${title} but was ${typeOf(value)}`
+    validate: (value, path = []) => {
+      if (typeof value !== 'object') return [new TypeError(type, value, `must be of type ${title} but was ${typeOf(value)}`, {path, code: 'typeof'})]
+      const errors = []
       if (notEmpty(options.required)) {
         const missingKeys = difference(options.required, Object.keys(value))
-        if (notEmpty(missingKeys)) return `is missing the following required keys: ${missingKeys.join(', ')}`
+        if (notEmpty(missingKeys)) errors.push(new TypeError(type, value, `is missing the following required keys: ${missingKeys.join(', ')}`, {path, code: 'required'}))
       }
 
-      const keyErrors = compact(Object.keys(properties).reduce((acc, key) => {
-        const type = properties[key]
+      const keyErrors = flatten(compact(Object.keys(properties).map((key) => {
         if (key in value) {
-          const error = typeError(type, value[key])
-          if (error) acc[key] = error  
+          const keyType = properties[key]
+          return array(typeErrors(keyType, value[key], path.concat([key])))
         }
-        return acc
-      }, {}))
-      if (notEmpty(keyErrors)) return keyErrors
+      })))
+      if (notEmpty(keyErrors)) errors.push(keyErrors)
 
       const patternKeys = {}
       if (options.patternProperties) {
-        const patternErrors = compact(Object.keys(value).reduce((acc, key) => {
+        const patternErrors = flatten(compact(Object.keys(value).map((key) => {
           const pattern = Object.keys(options.patternProperties).find(pattern => key.match(new RegExp(pattern)))
-          if (!acc[key] && pattern) {
-            const type = options.patternProperties[pattern]
-            const error = typeError(type, value[key])
-            if (error) acc[key] = error  
+          if (pattern) {
+            const patternType = options.patternProperties[pattern]
+            return typeErrors(patternType, value[key], path.concat([key]))
           }
-          return acc
-        }, {}))
-        if (notEmpty(patternErrors)) return patternErrors  
+        })))
+        if (notEmpty(patternErrors)) errors.push(patternErrors)
       }
 
       if (options.additionalProperties === false) {
         const recognizedKeys = Object.keys(properties).concat(Object.keys(patternKeys))
         const invalidKeys = difference(Object.keys(value), recognizedKeys)
-        if (notEmpty(invalidKeys)) return `has the following invalid keys: ${invalidKeys.join(', ')}`
+        if (notEmpty(invalidKeys)) errors.push(new TypeError(type, value, `has the following invalid keys: ${invalidKeys.join(', ')}`, {path, code: 'additionalProperties'}))
       }
-      return undefined
+      return notEmpty(errors) ? flatten(errors) : undefined
     }
   })
+  return type
 }
 
 function ExactObject (properties, options = {}) {
@@ -250,31 +262,35 @@ function ObjectOf (valueType, options = {}) {
 function ArrayType (items = 'any', options = {}) {
   items = typeObject(items)
   assertValidOptions(options, {minLength: 'number', maxLength: 'number'})
-  // TODO: add minLength/maxLength to description
   const description = `Array with items ${toString(items)}`
-  return compact({
+  const type = compact({
     type: 'array',
     title: 'ArrayType',
     description,
     items,
     options,
-    validate: (value) => {
-      if (!Array.isArray(value)) return `must be array but was ${typeOf(value)}`
-      const itemsError = value.reduce((acc, item, index) => {
-        const itemError = typeError(items, item)
-        if (itemError) acc[index] = itemError
-      }, {})
-      if (notEmpty(itemsError)) return itemsError
-      if (options.minLength && value.length < options.minLength) return `must have at least ${options.minLength} items but had only ${value.length}`
-      if (options.maxLength && value.length > options.maxLength) return `must have no more than ${options.minLength} items but had ${value.length}`
-      return undefined
+    validate: (value, path = []) => {
+      if (!Array.isArray(value)) return [new TypeError(type, value, `must be array but was ${typeOf(value)}`, {path, code: 'typeof'})]
+      const errors = []
+      const itemErrors = flatten(compact(value.map((item, index) => {
+        return typeErrors(items, item, path.concat([index]))
+      })))
+      if (notEmpty(itemErrors)) errors.push(itemErrors)
+      if (options.minLength && value.length < options.minLength) {
+        errors.push(new TypeError(type, value, `must have at least ${options.minLength} items but had only ${value.length}`, {path, code: 'minLength'}))
+      }
+      if (options.maxLength && value.length > options.maxLength) {
+        errors.push(new TypeError(type, value, `must have no more than ${options.minLength} items but had ${value.length}`, {path, code: 'maxLength'}))
+      }
+      return notEmpty(errors) ? flatten(errors) : undefined
     }
   })
+  return type
 }
 
 function Required (type) {
   const _typeObject = typeObject(type)
-  const options = merge(_typeObject.options, {required: true})
+  const options = merge(_typeObject.options, {isRequired: true})
   return merge(_typeObject, {options})
 }
 
@@ -288,8 +304,8 @@ function AllOf (types, options = {}) {
     options,
     validate: (value) => {
       for (let type of types) {
-        const error = typeError(type, value)
-        if (error) return error
+        const errors = typeErrors(type, value)
+        if (errors) return errors
       }
       return undefined
     }
@@ -299,24 +315,27 @@ function AllOf (types, options = {}) {
 function AnyOf (types, options = {}) {
   types = types.map(typeObject)
   const description = `AnyOf(${types.map(toString).join(', ')})`
-  return {
+  const type = {
     title: 'AnyOf',
     description,
     arg: types,
     options,
     validate: (value) => {
-      const matchingType = types.find((type) => !typeError(type, value))
+      const matchingType = types.find((type) => !typeErrors(type, value))
       if (matchingType) {
         return undefined
       } else {
-        return `is invalid - must be of type ${name}`
+        return new TypeError(type, value, `is invalid - must be of type ${description}`)
       }
     }
   }
+  return type
 }
 
 module.exports = {
-  typeError,
+  TypeError,
+  typeErrors,
+  isValid,
   assertType,
   typeObject,
   StringType,

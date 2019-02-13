@@ -25,7 +25,7 @@ npm install awesome-type-check
 ## Usage
 
 ```javascript
-const {typeError, ObjectType, StringType, Enum, Required} = require('awesome-type-check')
+const {typeErrors, ObjectType, StringType, Enum, Required} = require('awesome-type-check')
 
 const Username = StringType({minLength: 3, maxLength: 50, pattern: '^[a-z0-9_-]+$'})
 
@@ -36,27 +36,83 @@ const User = ObjectType({
     bonus: (v) => typeof v === 'number' && v > 0
 })
 
-const error = typeError(User, {name: 'Joe', username: 'j', status: 'foobar'})
+const errors = typeErrors(User, {name: 'Joe', username: 'j', status: 'foobar'})
 
-if (error) {
-  console.log('user is not valid, error:', error)
-  // => user is not valid, error: {
-  //      username: 'must be at least 3 characters long but was only 1 characters',
-  //      status: 'has value "foobar" (type string) but must be one of these values: active, inactive'
-  //    }
+if (errors) {
+  console.log('user is not valid, errors:', errors)
 } else {
   console.log('user is valid')
 }
 ```
 
+## What is a Type?
+
+A type can be specified as:
+
+* A string that represents a type returned by the `typeOf` function, i.e. `number`, `string`, `boolean`, `function`, `object`, `array` etc.
+* A validate function. The validate function can either be a predicate that returns `true` or `false` or a function that returns `undefined` or errors. If the validate function returns `true` or `undefined` then the type is considered valid and otherwise it is considered invalid. Errors are typically an array of `TypeError` objects.
+* A JSON schema object that optionally contains a validate function
+
+Here is an example of a type represented as a string:
+
+```javascript
+const {typeErrors} = require('awesome-type-check')
+const myType = 'number'
+typeErrors(myType, 123) // => undefined
+typeErrors(myType, 'foobar') // => [ { Error: value "foobar" (type string) must be of type number } ]
+```
+
+String types can be converted to JSON schema objects with `typeObject`:
+
+```javascript
+const {typeObject} = require('awesome-type-check')
+typeObject('number')
+// => { type: 'number',
+//      title: 'TypeOf',
+//      arg: 'number',
+//      validate: [Function: validate] }
+```
+
+Here is an example of a predicate validate function:
+
+```javascript
+const {typeErrors, isValid} = require('awesome-type-check')
+const isEven = (v) => typeof v === 'number' && v % 2 === 0
+typeErrors(isEven, 2) // => undefined
+isValid(isEven, 2) // => true
+isValid(isEven, 3) // => false
+```
+
+Here is the same function as a validate function that returns `undefined` or errors:
+
+```javascript
+const {typeErrors, TypeError} = require('awesome-type-check')
+const isEven = (v) => {
+  if (typeof v === 'number' && v % 2 === 0) {
+    return undefined
+  } else {
+    return [new TypeError(isEven, v, 'must be an even number')]
+  }
+}
+typeErrors(isEven, 2) // => undefined
+typeErrors(isEven, 3) // => [ { Error: must be an even number } ]
+isValid(isEven, 2) // => true
+isValid(isEven, 3) // => false
+```
+
 ## TODO
 
+* Test errors in nested types: object - array - object
 * Test ability to easily generate documentation etc. based on a nested complex type (good navigability and meta data)
 * More test cases: Enum, nested objects/arrays, AnyOf, AllOf, custom types, optional arrays (ArrayOrScalar)
 * More syntactic sugar for string types: 'string|number!'
 
+* Need to fix required option to not have two conflicting meanings
+
 * Integration with React when used as PropTypes. Ability to turn off in production
 * PropTypes compatibility layer?
+
+* Create a JSFiddle with unpkg
 
 * Apply to the assertValidOptions use case
 
@@ -75,7 +131,7 @@ if (error) {
 
 ## Resources
 
-* [superstruct - Data Validation](https://github.com/ianstormtaylor/superstruct)
+* [superstruct - Data Validation](https://github.com/ianstormtaylor/superstruct). It seems superstruct only reports on the first key having an error, not all keys. This may be an issue for form validation.
 * [joi - Object Schema Validation](https://github.com/hapijs/joi)
 * [facebook/prop-types - Type Checking React Props](https://github.com/facebook/prop-types)
 * [type_spec - Runtime Type Checks in Python](https://github.com/peter/type_spec)
