@@ -198,6 +198,10 @@ test('we can get good error metadata (type/value/path) from nested data structur
   expect(nestedErrors[0].path).toEqual(['foo', 'bar', 0, 'baz'])
   expect(nestedErrors[0].code).toEqual('typeof')
   expect(nestedErrors[0].message).toEqual('must be of type boolean but was number')
+
+  const multipleErrors = typeErrors(NestedData, {name: 123, topLevelNumbers: {}, foo: {bar: [{baz: 123}]}})
+  expect(multipleErrors.length).toEqual(3)
+  expect(multipleErrors.map(e => e.path.join('.')).sort()).toEqual(['foo.bar.0.baz', 'name', 'topLevelNumbers'])
 })
 
 test('typeErrors - validates schema object type property', () => {

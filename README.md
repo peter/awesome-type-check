@@ -104,28 +104,16 @@ isValid(isEven, 3) // => false
 
 ## TODO
 
+* TypeScript or Babel
+* Create a JSFiddle with unpkg (https://medium.com/cameron-nokes/the-30-second-guide-to-publishing-a-typescript-package-to-npm-89d93ff7bccd)
 * Test ability to easily generate documentation etc. based on a nested complex type (good navigability and meta data)
 * More test cases: Enum, nested objects/arrays, AnyOf, AllOf, custom types, optional arrays (ArrayOrScalar)
 * More syntactic sugar for string types: 'string|number!'
-
-* TypeScript or Babel
-* Create a JSFiddle with unpkg (https://medium.com/cameron-nokes/the-30-second-guide-to-publishing-a-typescript-package-to-npm-89d93ff7bccd)
-
 * Integration with React when used as PropTypes. Ability to turn off in production. PropTypes compatibility layer?
-
 * Apply to the assertValidOptions use case
-
 * Linting
 * Jest
-* toString on types?
-* Can we reduce the number of types a TypeError can be or handle it somehow so at least there is always a decent string representation?
-* Should use type checks internally?
-* Number type with min/max
-* Integer type with min/max
-* Enum type
 * Tuple type (Array with items array and minLength/maxLenth?)
-* Syntactic sugar to mark object property type required?
-* JSON Schema adapater (toJsonSchema, fromJsonSChema)
 
 ## Resources
 
