@@ -127,6 +127,10 @@ isValid(IsEven, 3) // => false
 ## TODO
 
 * ESLint
+* Add error toJSON test (i.e. check JSON.parse(JSON.stringify(error)))
+* Improve assertValidOptions usage - introduce SHARED_OPTIONS ({isRequired}) and default additionalKeys to false
+* Add ajv schema validation to nested type test
+* Improve generic message if you can extract title
 * Create single ES5/UMD file with Babel/Rollup for client side use?
 * Create a JSFiddle with unpkg (https://medium.com/cameron-nokes/the-30-second-guide-to-publishing-a-typescript-package-to-npm-89d93ff7bccd)
 * Test ability to easily generate documentation etc. based on a nested complex type (good navigability and meta data)
