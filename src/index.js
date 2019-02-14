@@ -192,7 +192,7 @@ function TypeOf (type, options = {}) {
 function Validate (validate, options = {}) {
   const description = options.description || validate.name || 'Unnamed validate function'
   return {
-    title: 'Validate',
+    title: (options.title || 'Validate'),
     description,
     options,
     validate

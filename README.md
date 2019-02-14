@@ -85,10 +85,14 @@ isValid(isEven, 2) // => true
 isValid(isEven, 3) // => false
 ```
 
-Here is the same type as a validate function that returns `undefined` or errors:
+Validate functions that are anonymous JavaScript predice functions (that return true/false) are opaque in the sense that they don't
+have a name (which can be useful for documentation and errors) and they don't provide a specific/custom error message. If you need to generate
+documentation from your types or if you are targeting end users you probably want your validate functions to be named
+JavaScript functions (or be created with `Validate`, se below) and you want them to return a useful error message.
+Here is the same type as above implemented as a validate function that returns `undefined` or errors:
 
 ```javascript
-const {typeErrors, TypeError} = require('awesome-type-check')
+const {typeErrors, isValid, TypeError} = require('awesome-type-check')
 const isEven = (v) => {
   if (typeof v === 'number' && v % 2 === 0) {
     return undefined
@@ -100,6 +104,24 @@ typeErrors(isEven, 2) // => undefined
 typeErrors(isEven, 3) // => [ { Error: must be an even number } ]
 isValid(isEven, 2) // => true
 isValid(isEven, 3) // => false
+```
+
+Here is an example of using `Validate` to create the same type:
+
+```javascript
+const {typeErrors, isValid, TypeError, Validate} = require('awesome-type-check')
+const isEven = (v) => {
+  if (typeof v === 'number' && v % 2 === 0) {
+    return undefined
+  } else {
+    return [new TypeError(isEven, v, 'must be an even number')]
+  }
+}
+const IsEven = Validate(isEven, {title: 'IsEven', description: 'an even number'})
+typeErrors(IsEven, 2) // => undefined
+typeErrors(IsEven, 3) // => [ { Error: must be an even number } ]
+isValid(IsEven, 2) // => true
+isValid(IsEven, 3) // => false
 ```
 
 ## TODO
