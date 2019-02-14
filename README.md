@@ -104,15 +104,14 @@ isValid(isEven, 3) // => false
 
 ## TODO
 
-* TypeScript or Babel
+* ESLint
+* Create single ES5/UMD file with Babel/Rollup for client side use?
 * Create a JSFiddle with unpkg (https://medium.com/cameron-nokes/the-30-second-guide-to-publishing-a-typescript-package-to-npm-89d93ff7bccd)
 * Test ability to easily generate documentation etc. based on a nested complex type (good navigability and meta data)
 * More test cases: Enum, nested objects/arrays, AnyOf, AllOf, custom types, optional arrays (ArrayOrScalar)
 * More syntactic sugar for string types: 'string|number!'
 * Integration with React when used as PropTypes. Ability to turn off in production. PropTypes compatibility layer?
 * Apply to the assertValidOptions use case
-* Linting
-* Jest
 * Tuple type (Array with items array and minLength/maxLenth?)
 
 ## Resources

@@ -71,7 +71,7 @@ function StringType (options = {}) {
     const optionsDescriptions = []
     if (options.minLength) optionsDescriptions.push(`minimum length ${options.minLength}`)
     if (options.maxLength) optionsDescriptions.push(`maximum length ${options.maxLength}`)
-    if (options.pattern) optionsDescriptions.push(`matching pattern ${options.pattern}`)
+    if (options.pattern) optionsDescriptions.push(`pattern ${options.pattern}`)
     description = `String with ${optionsDescriptions.join(' and ')}`
   }
   const type = compact({
