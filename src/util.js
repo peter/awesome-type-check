@@ -1,21 +1,21 @@
-export function isArray (value) {
+function isArray (value) {
   return Array.isArray(value)
 }
 
 // See: https://stackoverflow.com/questions/5876332/how-can-i-differentiate-between-an-object-literal-other-javascript-objects
-export function isObject (value) {
+function isObject (value) {
   return notNil(value) && typeof value === 'object' && value.constructor === Object
 }
 
-export function nil (value) {
+function nil (value) {
   return value === undefined || value === null
 }
 
-export function notNil (value) {
+function notNil (value) {
   return !nil(value)
 }
 
-export function empty (value) {
+function empty (value) {
   if (nil(value)) {
     return true
   } else if (isArray(value) || typeof value === 'string') {
@@ -27,30 +27,30 @@ export function empty (value) {
   }
 }
 
-export function notEmpty (value) {
+function notEmpty (value) {
   return !empty(value)
 }
 
-export function array (value) {
+function array (value) {
   if (nil(value)) return []
   return isArray(value) ? value : [value]
 }
 
-export function concat (...arrays) {
+function concat (...arrays) {
   return arrays.filter(notNil).reduce((a1, a2) => a1.concat(a2), [])
 }
 
 // NOTE: only flattens one level
-export function flatten (array) {
+function flatten (array) {
   return concat(...array)
 }
 
-export function merge (object1, object2) {
+function merge (object1, object2) {
   return Object.assign({}, object1, object2)
 }
 
 // Alternative name: removeEmpty
-export function compact (value) {
+function compact (value) {
   const predicate = notEmpty
   if (isArray(value)) {
     const result = value.map(compact).filter(predicate)
@@ -70,7 +70,7 @@ export function compact (value) {
 }
 
 // Like: http://ramdajs.com/docs/#path
-export function getIn (obj, path, defaultValue = undefined) {
+function getIn (obj, path, defaultValue) {
   path = isArray(path) ? path : path.split('.')
   let result = obj
   for (const key of path) {
@@ -84,17 +84,17 @@ export function getIn (obj, path, defaultValue = undefined) {
   return result
 }
 
-export function unique<T> (array: T[]): T[] {
+function unique (array) {
   return Array.from(new Set(array))
 }
 
-export function difference (array1, array2) {
+function difference (array1, array2) {
   const values1 = array1 || []
   const values2 = array2 || []
   return values1.filter(v => !values2.includes(v))
 }
 
-export function mapObj (obj, valueTransform) {
+function mapObj (obj, valueTransform) {
   if (!obj) return undefined
   return Object.entries(obj).reduce((acc, [k, v]) => {
     acc[k] = valueTransform(k, v)
@@ -103,7 +103,7 @@ export function mapObj (obj, valueTransform) {
 }
 
 // Similar to: https://github.com/jonschlinkert/kind-of/blob/master/index.js
-export function typeOf (value) {
+function typeOf (value) {
   if (value === null) return 'null'
   if (value === undefined) return 'undefined'
   if (isArray(value)) return 'array'
@@ -113,7 +113,7 @@ export function typeOf (value) {
   return typeof value
 }
 
-export function assertValidOptions (options, validOptionTypes, assertConfig: any = {}) {
+function assertValidOptions (options, validOptionTypes, assertConfig = {}) {
 	if (!options) return;
 	for (const key in options) {
 		const actualType = typeOf(options[key])
@@ -140,4 +140,20 @@ export function assertValidOptions (options, validOptionTypes, assertConfig: any
       })
     }
   }
+}
+
+module.exports = {
+  isArray,
+  empty,
+  notEmpty,
+  array,
+  flatten,
+  merge,
+  compact,
+  getIn,
+  unique,
+  difference,
+  mapObj,
+  typeOf,
+  assertValidOptions,
 }

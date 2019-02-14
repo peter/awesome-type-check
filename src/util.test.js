@@ -1,4 +1,4 @@
-const {assertValidOptions} = require('../dist/util')
+const {assertValidOptions} = require('./util')
 
 test('assertValidOptions - can check all types supported by the typeOf function', () => {
   const validOptions = {

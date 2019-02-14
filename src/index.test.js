@@ -1,8 +1,8 @@
 const Ajv = require('ajv')
 const ajv = new Ajv()
-const {mapObj} = require('../dist/util')
-const {TypeError} = require('../dist/type_error')
-const {typeErrors, ObjectType, ArrayType, ExactObject, ObjectOf, StringType, Enum, TypeOf, Required} = require('../dist/index')
+const {mapObj} = require('./util')
+const TypeError = require('./type_error')
+const {typeErrors, ObjectType, ArrayType, ExactObject, ObjectOf, StringType, Enum, TypeOf, Required} = require('./index')
 
 function assertSchema (schema, data) {
   ajv.validate(schema, data)

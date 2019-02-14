@@ -104,9 +104,7 @@ isValid(isEven, 3) // => false
 
 ## TODO
 
-* TypeScript
-  Does stacktrace still work for TypeError?
-* Babel?
+* TypeScript or Babel
 * Create a JSFiddle with unpkg (https://medium.com/cameron-nokes/the-30-second-guide-to-publishing-a-typescript-package-to-npm-89d93ff7bccd)
 * Test ability to easily generate documentation etc. based on a nested complex type (good navigability and meta data)
 * More test cases: Enum, nested objects/arrays, AnyOf, AllOf, custom types, optional arrays (ArrayOrScalar)
