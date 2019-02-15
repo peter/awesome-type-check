@@ -343,7 +343,7 @@ function AnyOf (types, options = {}) {
       if (matchingType) {
         return undefined
       } else {
-        return new TypeError(type, value, `is invalid - must be of type ${description}`)
+        return new TypeError(type, value, `must be of type ${description}`)
       }
     }
   }

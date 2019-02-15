@@ -314,6 +314,7 @@ function Car(make, model) {
   this.make = make
   this.model = model
 }
+
 typeErrors(InstanceOf(Car), new Car('volvo', 'v90')) // => undefined
 typeErrors(InstanceOf(Date), new Date) // => undefined
 typeErrors(InstanceOf(RegExp), new Date)[0].message // => 'must be instanceof RegExp'
@@ -321,20 +322,57 @@ typeErrors(InstanceOf(RegExp), new Date)[0].message // => 'must be instanceof Re
 
 ## Required
 
-TODO
+You can use `Required` to mark a key in an `ObjectType` as required:
+
+```javascript
+const {typeErrors, ObjectType, Required} = require('awesome-type-check')
+const User = ObjectType({
+  username: Required('string'),
+  bio: 'string'
+})
+
+typeErrors(User, {username: 'joe'}) // => undefined
+typeErrors(User, {})[0].message // => 'is missing the following required keys: username'
+```
 
 ## AllOf
 
-TODO
+Use `AllOf` to check that a value must validate against *all* of the given types (intersection type):
+
+```javascript
+const {typeErrors, NumberType, AllOf} = require('awesome-type-check')
+const PositiveNumber = NumberType({minimum: 0})
+const DivisibleByTen = (v) => v % 10 === 0
+const Score = AllOf([PositiveNumber, DivisibleByTen])
+
+typeErrors(Score, 0) // => undefined
+typeErrors(Score, 10) // => undefined
+typeErrors(Score, 15)[0].message // => 'is invalid'
+typeErrors(Score, 'foobar')[0].message // => 'must be of type NumberType but was string'
+```
 
 ## AnyOf
 
-TODO
+Use `AnyOf` to check that a value must validate against *at least one* of the given types (union type):
+
+```javascript
+const {typeErrors, NumberType, AnyOf} = require('awesome-type-check')
+const PositiveNumber = NumberType({minimum: 0})
+const DivisibleByTen = (v) => v % 10 === 0
+const Score = AnyOf([PositiveNumber, DivisibleByTen])
+
+typeErrors(Score, 0) // => undefined
+typeErrors(Score, 3) // => undefined
+typeErrors(Score, -10) // => undefined
+typeErrors(Score, -3)[0].message // => 'must be of type AnyOf(NumberType, DivisibleByTen)'
+typeErrors(Score, 'foobar')[0].message // => 'must be of type AnyOf(NumberType, DivisibleByTen)'
+```
 
 ## TODO
 
 * TypeOf arg should be string or array
-* Improve README example code so that comments with return value generate assertions like assert.equal(typeErrors(isEven, 2), undefined)
+* Syntactic sugar for string types: 'string|number!'
+* Syntactic sugar for ArrayType: ['string]
 * ESLint
 * Add error toJSON test (i.e. check JSON.parse(JSON.stringify(error)))
 * Improve assertValidOptions usage - introduce SHARED_OPTIONS ({isRequired}) and default additionalKeys to false
@@ -344,8 +382,6 @@ TODO
 * Create a JSFiddle with unpkg (https://medium.com/cameron-nokes/the-30-second-guide-to-publishing-a-typescript-package-to-npm-89d93ff7bccd)
 * Test ability to easily generate documentation etc. based on a nested complex type (good navigability and meta data)
 * More test cases: Enum, nested objects/arrays, AnyOf, AllOf, custom types, optional arrays (ArrayOrScalar)
-* More syntactic sugar for string types: 'string|number!'
-* Syntactic sugar for ArrayType: ['string]
 * Integration with React when used as PropTypes. Ability to turn off in production. PropTypes compatibility layer?
 * Apply to the assertValidOptions use case
 * Tuple type (Array with items array and minLength/maxLenth?)
