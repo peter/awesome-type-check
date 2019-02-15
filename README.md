@@ -42,7 +42,7 @@ errors.length // => 2
 errors.every(e => e instanceof TypeError) // => true
 errors[0].message // => 'must be at least 3 characters long but was only 1 characters'
 errors[0].path // => ['username']
-errors[1].message // => 'has value "foobar" (type string) but must be one of these values: active, inactive'
+errors[1].message // => 'must be one of: active, inactive'
 errors[1].path // => ['status']
 ```
 
@@ -203,21 +203,113 @@ typeErrors(NullType(), [])[0].message // => 'must be of type null but was array'
 
 ## ObjectType
 
+Use `ObjectType` to validate objects, accepts [JSON schema equivalent](https://json-schema.org/understanding-json-schema/reference/object.html) options `required` and `additionalProperties`. You can use `ObjectType` and `ArrayType` to validate nested data:
+
+```javascript
+const {typeErrors, ObjectType, ArrayType, Required} = require('awesome-type-check')
+const User = ObjectType({
+  username: Required('string'),
+  items: ArrayType(ObjectType({
+    name: Required('string'),
+    createdAt: Required('date')
+  }))
+})
+
+typeErrors(User, {username: 'joe'}) // => undefined
+const errors = typeErrors(User, {username: 123, items: [{name: 'foo'}, {name: 123, createdAt: new Date()}]})
+errors.length // => 3
+errors[0].path // => ['username']
+errors[0].message // => 'must be of type string but was number'
+errors[1].path // => ['items', 0]
+errors[1].message // => 'is missing the following required keys: createdAt'
+errors[2].path // => ['items', 1, 'name']
+errors[2].message // => 'must be of type string but was number'
+```
+
 ## ExactObject
+
+Use `ExactObject` to validate objects where no additional properties other than those specified are allowed. Syntactic sugar for `ObjectType(properties, {addtionalProperties: false})`:
+
+```javascript
+const {typeErrors, ExactObject} = require('awesome-type-check')
+const User = ExactObject({
+  username: 'string'
+})
+
+typeErrors(User, {username: 'joe'}) // => undefined
+const errors = typeErrors(User, {userName: 'joe'})
+errors.length // => 1
+errors[0].message // => 'has the following invalid keys: userName'
+```
 
 ## ObjectOf
 
+Use `ObjectOf` to validate that all values of an object must be of a certain type. Syntactic sugar for `ObjectType({}, {patternProperties: {'.*': valueType}})`:
+
+```javascript
+const {typeErrors, ObjectOf} = require('awesome-type-check')
+const Callbacks = ObjectOf('function')
+
+typeErrors(Callbacks, {onClick: function () {}}) // => undefined
+const errors = typeErrors(Callbacks, {onClick: []})
+errors.length // => 1
+errors[0].message // => 'must be of type function but was array'
+```
+
 ## ArrayType
+
+Use `ArrayType` to validate that a value must be an `array`. Options are `minLength` and `maxLength`:
+
+```javascript
+const {typeErrors, ArrayType} = require('awesome-type-check')
+const Numbers = ArrayType('number', {minLength: 2, maxLength: 5})
+
+typeErrors(Numbers, [1, 2]) // => undefined
+const errors = typeErrors(Numbers, ['foobar'])
+errors.length // => 2
+errors[0].message // => 'must be of type number but was string'
+errors[1].message // => 'must have at least 2 items but had only 1'
+```
 
 ## Enum
 
+Use `Enum` to check that a value is in a given set of values:
+
+```javascript
+const {typeErrors, Enum} = require('awesome-type-check')
+const Status = Enum(['active', 'inactive'])
+
+typeErrors(Status, 'active') // => undefined
+typeErrors(Status, 'inactive') // => undefined
+typeErrors(Status, 'foobar')[0].message // => 'must be one of: active, inactive'
+```
+
 ## InstanceOf
+
+Use `InstanceOf` to check that a value has a certain constructor (or class):
+
+```javascript
+const {typeErrors, InstanceOf} = require('awesome-type-check')
+function Car(make, model) {
+  this.make = make
+  this.model = model
+}
+typeErrors(InstanceOf(Car), new Car('volvo', 'v90')) // => undefined
+typeErrors(InstanceOf(Date), new Date) // => undefined
+typeErrors(InstanceOf(RegExp), new Date)[0].message // => 'must be instanceof RegExp'
+```
 
 ## Required
 
+TODO
+
 ## AllOf
 
+TODO
+
 ## AnyOf
+
+TODO
 
 ## TODO
 
@@ -233,6 +325,7 @@ typeErrors(NullType(), [])[0].message // => 'must be of type null but was array'
 * Test ability to easily generate documentation etc. based on a nested complex type (good navigability and meta data)
 * More test cases: Enum, nested objects/arrays, AnyOf, AllOf, custom types, optional arrays (ArrayOrScalar)
 * More syntactic sugar for string types: 'string|number!'
+* Syntactic sugar for ArrayType: ['string]
 * Integration with React when used as PropTypes. Ability to turn off in production. PropTypes compatibility layer?
 * Apply to the assertValidOptions use case
 * Tuple type (Array with items array and minLength/maxLenth?)

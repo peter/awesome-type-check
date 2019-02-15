@@ -59,7 +59,7 @@ test('ObjectType without options - checks types of keys, keys are optional, addi
   })
 
   expectObjectErrors(User, {name: 'Joe', username: 'j', status: 'foobar'}, {
-    status: 'has value "foobar" (type string) but must be one of these values: active, inactive',
+    status: 'must be one of: active, inactive',
     username: 'must be at least 3 characters long but was only 1 characters'
   })
 })

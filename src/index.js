@@ -148,7 +148,7 @@ function Enum (values, options = {}) {
     options,
     validate: (value) => {
       if (!values.includes(value)) {
-        return new TypeError(type, value, `has value "${value}" (type ${typeOf(value)}) but must be one of these values: ${values.join(', ')}`, {code: 'enum'})
+        return new TypeError(type, value, `must be one of: ${values.join(', ')}`, {code: 'enum'})
       } else {
         return undefined
       }
@@ -166,7 +166,7 @@ function InstanceOf (klass, options = {}) {
     options,
     validate: (value) => {
       if (!(value instanceof klass)) {
-        return new TypeError(type, value, `value "${value}" (type ${typeOf(value)}) must be an instance of ${klass.name}`, {code: 'instanceof'})
+        return new TypeError(type, value, `must be instanceof ${klass.name}`, {code: 'instanceof'})
       } else {
         return undefined
       }
