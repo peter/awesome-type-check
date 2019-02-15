@@ -31,12 +31,13 @@ const Username = StringType({minLength: 3, maxLength: 50, pattern: '^[a-z0-9_-]+
 
 const User = ObjectType({
     name: 'string',
+    tags: ['string'],
     username: Required(Username),
     status: Enum(['active', 'inactive']),
     bonus: (v) => typeof v === 'number' && v > 0
 })
 
-const errors = typeErrors(User, {name: 'Joe', username: 'j', status: 'foobar'})
+const errors = typeErrors(User, {name: 'Joe', tags: ['admin', 'vip'], username: 'j', status: 'foobar'})
 
 errors.length // => 2
 errors.every(e => e instanceof TypeError) // => true
@@ -59,7 +60,6 @@ A type can be specified as:
 Here is an example of a `typeOf` type represented as a string:
 
 ```javascript
-const assert = require('assert').strict
 const {typeErrors, isValid} = require('awesome-type-check')
 const Bonus = 'number'
 
@@ -67,6 +67,17 @@ typeErrors(Bonus, 123) // => undefined
 isValid(Bonus, 123) // => true
 typeErrors(Bonus, 'foobar')[0].message // => 'must be of type number but was string'
 isValid(Bonus, 'foobar') // => false
+```
+
+You can allow for multiple types by separating them by a pipe (equivalent to `AnyOf`):
+
+```javascript
+const {typeErrors} = require('awesome-type-check')
+const Bonus = 'number|string'
+
+typeErrors(Bonus, 123) // => undefined
+typeErrors(Bonus, 'foobar') // => undefined
+typeErrors(Bonus, true)[0].message // => 'must be of type number|string but was boolean'
 ```
 
 String types can be converted to JSON schema objects with `typeObject`:
@@ -91,6 +102,16 @@ typeErrors(Bonus, 123) // => undefined
 isValid(Bonus, 123) // => true
 typeErrors(Bonus, 'foobar')[0].message // => 'must be of type number but was string'
 Bonus // => {type: 'number', title: 'number', description: 'TypeOf(number)', arg: 'number'}
+```
+
+You can also provide `TypeOf` with an array of types (equivalent to `AnyOf(types)`):
+
+```javascript
+const {typeErrors, TypeOf} = require('awesome-type-check')
+const Bonus = TypeOf(['number', 'boolean'])
+typeErrors(Bonus, 123) // => undefined
+typeErrors(Bonus, false) // => undefined
+typeErrors(Bonus, 'foobar')[0].message // => 'must be of type number|boolean but was string'
 ```
 
 ## Custom Validate Functions
@@ -291,6 +312,16 @@ errors[0].message // => 'must be of type number but was string'
 errors[1].message // => 'must have at least 2 items but had only 1'
 ```
 
+There is also syntactic sugar available that allows you to use an array literal to represent an `ArrayType`:
+
+```javascript
+const {typeErrors} = require('awesome-type-check')
+const Numbers = ['number']
+
+typeErrors(Numbers, [1, 2]) // => undefined
+typeErrors(Numbers, [1, 'foobar'])[0].message // => 'must be of type number but was string'
+```
+
 ## Enum
 
 Use `Enum` to check that a value is in a given set of values:
@@ -335,6 +366,19 @@ typeErrors(User, {username: 'joe'}) // => undefined
 typeErrors(User, {})[0].message // => 'is missing the following required keys: username'
 ```
 
+You can also mark keys with types represented as strings as required by adding an exclamation mark:
+
+```javascript
+const {typeErrors, ObjectType} = require('awesome-type-check')
+const User = ObjectType({
+  username: 'string!',
+  bio: 'string'
+})
+
+typeErrors(User, {username: 'joe'}) // => undefined
+typeErrors(User, {})[0].message // => 'is missing the following required keys: username'
+```
+
 ## AllOf
 
 Use `AllOf` to check that a value must validate against *all* of the given types (intersection type):
@@ -342,12 +386,12 @@ Use `AllOf` to check that a value must validate against *all* of the given types
 ```javascript
 const {typeErrors, NumberType, AllOf} = require('awesome-type-check')
 const PositiveNumber = NumberType({minimum: 0})
-const DivisibleByTen = (v) => v % 10 === 0
+const DivisibleByTen = (v) => v % 10 === 0 ? undefined : 'must be divisible by 10'
 const Score = AllOf([PositiveNumber, DivisibleByTen])
 
 typeErrors(Score, 0) // => undefined
 typeErrors(Score, 10) // => undefined
-typeErrors(Score, 15)[0].message // => 'is invalid'
+typeErrors(Score, 15)[0].message // => 'must be divisible by 10'
 typeErrors(Score, 'foobar')[0].message // => 'must be of type NumberType but was string'
 ```
 
@@ -358,7 +402,7 @@ Use `AnyOf` to check that a value must validate against *at least one* of the gi
 ```javascript
 const {typeErrors, NumberType, AnyOf} = require('awesome-type-check')
 const PositiveNumber = NumberType({minimum: 0})
-const DivisibleByTen = (v) => v % 10 === 0
+const DivisibleByTen = (v) => v % 10 === 0 ? undefined : 'must be divisible by 10'
 const Score = AnyOf([PositiveNumber, DivisibleByTen])
 
 typeErrors(Score, 0) // => undefined
@@ -370,7 +414,6 @@ typeErrors(Score, 'foobar')[0].message // => 'must be of type AnyOf(NumberType, 
 
 ## TODO
 
-* TypeOf arg should be string or array
 * Syntactic sugar for string types: 'string|number!'
 * Syntactic sugar for ArrayType: ['string]
 * ESLint

@@ -19,7 +19,11 @@ function toString (type) {
 
 function typeObject (type) {
   if (typeOf(type) === 'string') {
-    return TypeOf(type)
+    const options = {isRequired: type.endsWith('!')}
+    const types = (options.isRequired ? type.substring(0, type.length - 1) : type).split('|')
+    return TypeOf((types.length > 1 ? types : types[0]), options)
+  } else if (typeOf(type) === 'array') {
+    return ArrayType(typeObject(type[0]))
   } else if (typeOf(type) === 'function') {
     return Validate(type)
   } else {
@@ -176,15 +180,15 @@ function InstanceOf (klass, options = {}) {
 }
 
 function TypeOf (type, options = {}) {
-  if (typeOf(type) !== 'string') throw new Error(`type argument to TypeOf must be a string but was of type ${typeOf(type)}`)
+  if (!['string', 'array'].includes(typeOf(type))) throw new Error(`type argument to TypeOf must be string or array but was ${typeOf(type)}`)
   const _type = compact({
-    type: JSON_TYPES.includes(type) ? type : undefined,
-    title: type,
+    type: array(type).every(t => JSON_TYPES.includes(t)) ? (array(type).length > 1 ? type : array(type)[0]) : undefined,
+    title: array(type).join('|'),
     description: `TypeOf(${type})`,
     arg: type,
     options,
     validate: (value) => {
-      if (typeOf(value) !== type && type !== 'any') {
+      if (!array(type).includes(typeOf(value)) && !array(type).includes('any')) {
         return [typeOfError(_type, value)]
       } else {
         return undefined
