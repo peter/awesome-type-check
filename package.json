@@ -4,7 +4,7 @@
   "description": "Runtime type checks / schema validation for JavaScript objects and values.",
   "main": "src/index.js",
   "scripts": {
-    "test": "jest"
+    "test": "bin/generate-readme-test && NOTE_PATH=. jest"
   },
   "repository": {
     "type": "git",

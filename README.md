@@ -25,7 +25,8 @@ npm install awesome-type-check
 ## Usage
 
 ```javascript
-const {typeErrors, ObjectType, StringType, Enum, Required} = require('awesome-type-check')
+const assert = require('assert').strict
+const {typeErrors, TypeError, ObjectType, StringType, Enum, Required} = require('awesome-type-check')
 
 const Username = StringType({minLength: 3, maxLength: 50, pattern: '^[a-z0-9_-]+$'})
 
@@ -38,11 +39,12 @@ const User = ObjectType({
 
 const errors = typeErrors(User, {name: 'Joe', username: 'j', status: 'foobar'})
 
-if (errors) {
-  console.log('user is not valid, errors:', errors)
-} else {
-  console.log('user is valid')
-}
+assert.equal(errors.length, 2)
+assert(errors.every(e => e instanceof TypeError))
+assert.equal(errors[0].message, 'must be at least 3 characters long but was only 1 characters')
+assert.deepEqual(errors[0].path, ['username'])
+assert.equal(errors[1].message, 'has value "foobar" (type string) but must be one of these values: active, inactive')
+assert.deepEqual(errors[1].path, ['status'])
 ```
 
 ## What is a Type?
@@ -58,23 +60,34 @@ A type can be specified as:
 Here is an example of a `typeOf` type represented as a string:
 
 ```javascript
+const assert = require('assert').strict
 const {typeErrors, isValid} = require('awesome-type-check')
 const Bonus = 'number'
-typeErrors(Bonus, 123) // => undefined
-isValid(Bonus, 123) // => true
-typeErrors(Bonus, 'foobar') // => [ { Error: must be of type number but was string } ]
-isValid(Bonus, 'foobar') // => false
+
+assert.equal(typeErrors(Bonus, 123), undefined)
+assert.equal(isValid(Bonus, 123), true)
+assert.equal(typeErrors(Bonus, 'foobar')[0].message, 'must be of type number but was string')
+assert.equal(isValid(Bonus, 'foobar'), false)
 ```
 
 String types can be converted to JSON schema objects with `typeObject`:
 
 ```javascript
+const assert = require('assert').strict
+function assertEqualKeys(obj, keyValues) {
+  Object.entries(keyValues).forEach(([key, value]) => assert.deepEqual(obj[key], value))
+}
 const {typeObject} = require('awesome-type-check')
-typeObject('number')
-// => { type: 'number',
-//      title: 'TypeOf',
-//      arg: 'number',
-//      validate: [Function: validate] }
+const MyNumber = typeObject('number')
+
+assert.equal(typeof MyNumber, 'object')
+assertEqualKeys(MyNumber, {
+  type: 'number',
+  title: 'number',
+  description: 'TypeOf(number)',
+  arg: 'number'
+})
+assert.equal(typeof MyNumber.validate, 'function')
 ```
 
 ## TypeOf
@@ -82,20 +95,22 @@ typeObject('number')
 Basic types with additional metadata can be created with the `TypeOf` function:
 
 ```javascript
+const assert = require('assert').strict
+function assertEqualKeys(obj, keyValues) {
+  Object.entries(keyValues).forEach(([key, value]) => assert.deepEqual(obj[key], value))
+}
 const {typeErrors, isValid, TypeOf} = require('awesome-type-check')
 const Bonus = TypeOf('number', {title: 'Bonus', description: 'Amount of bonus points for a user'})
-typeErrors(Bonus, 123) // => undefined
-isValid(Bonus, 123) // => true
-typeErrors(Bonus, 'foobar') // => [ { Error: must be of type number but was string } ]
-Bonus
-// { type: 'number',
-//   title: 'number',
-//   description: 'TypeOf(number)',
-//   arg: 'number',
-//   options:
-//    { title: 'Bonus',
-//      description: 'Amount of bonus points for a user' },
-//   validate: [Function: validate] }
+assert.equal(typeErrors(Bonus, 123), undefined)
+assert.equal(isValid(Bonus, 123), true)
+assert.equal(typeErrors(Bonus, 'foobar')[0].message, 'must be of type number but was string')
+assertEqualKeys(Bonus,
+  {type: 'number',
+    title: 'number',
+    description: 'TypeOf(number)',
+    arg: 'number'
+  }
+)
 ```
 
 ## Custom Validate Functions
@@ -103,11 +118,12 @@ Bonus
 Here is an example of a predicate validate function:
 
 ```javascript
+const assert = require('assert').strict
 const {typeErrors, isValid} = require('awesome-type-check')
 const isEven = (v) => typeof v === 'number' && v % 2 === 0
-typeErrors(isEven, 2) // => undefined
-isValid(isEven, 2) // => true
-isValid(isEven, 3) // => false
+assert.equal(typeErrors(isEven, 2), undefined)
+assert.equal(isValid(isEven, 2), true)
+assert.equal(isValid(isEven, 3), false)
 ```
 
 Validate functions that are anonymous JavaScript predice functions (that return true/false) are opaque in the sense that they don't
