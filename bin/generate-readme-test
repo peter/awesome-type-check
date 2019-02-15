@@ -17,8 +17,23 @@ function fixRequire (code) {
   return code.replace(/require\('awesome-type-check'\)/g, "require('src/index')")
 }
 
+function injectAssertions (code) {
+  return code.split('\n').map(line => {
+    const [value, expectedValue] = line.split(/\/\/\s*=>/).map(p => p.trim())
+    if (value && expectedValue) {
+      if (expectedValue.startsWith('{')) {
+        return `{const value = ${value}; const expectedValue = ${expectedValue}; Object.entries(expectedValue).forEach(([k, v]) => expect(value[k]).toEqual(v))}`
+      } else {
+        return `expect(${value}).toEqual(${expectedValue})`
+      }
+    } else {
+      return line
+    }
+  }).join('\n')
+}
+
 function generateTestCode (codeSnippets) {
-  const tests = codeSnippets.map(fixRequire).map((snippet, index) => {
+  const tests = codeSnippets.map(fixRequire).map(injectAssertions).map((snippet, index) => {
     return `
 test('readme code snippet ${index+1} works', () => {
 ${snippet}
