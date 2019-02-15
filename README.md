@@ -144,6 +144,31 @@ isValid(IsEven, 2) // => true
 isValid(IsEven, 3) // => false
 ```
 
+## Validating Nested Data
+
+You can use `ObjectType` and `ArrayType` to validate nested data:
+
+```javascript
+const {typeErrors, ObjectType, ArrayType, Required} = require('awesome-type-check')
+const User = ObjectType({
+  username: Required('string'),
+  items: ArrayType(ObjectType({
+    name: Required('string'),
+    createdAt: Required('date')
+  }))
+})
+
+typeErrors(User, {username: 'joe'}) // => undefined
+const errors = typeErrors(User, {username: 123, items: [{name: 'foo'}, {name: 123, createdAt: new Date()}]})
+errors.length // => 3
+errors[0].path // => ['username']
+errors[0].message // => 'must be of type string but was number'
+errors[1].path // => ['items', 0]
+errors[1].message // => 'is missing the following required keys: createdAt'
+errors[2].path // => ['items', 1, 'name']
+errors[2].message // => 'must be of type string but was number'
+```
+
 ## StringType
 
 Use `StringType` to validate string values and optionally provide `minLength`, `maxLength`, and `pattern` options:
@@ -203,27 +228,22 @@ typeErrors(NullType(), [])[0].message // => 'must be of type null but was array'
 
 ## ObjectType
 
-Use `ObjectType` to validate objects, accepts [JSON schema equivalent](https://json-schema.org/understanding-json-schema/reference/object.html) options `required` and `additionalProperties`. You can use `ObjectType` and `ArrayType` to validate nested data:
+Use `ObjectType` to validate objects, accepts [JSON schema equivalent](https://json-schema.org/understanding-json-schema/reference/object.html) options `required` and `additionalProperties`:
 
 ```javascript
 const {typeErrors, ObjectType, ArrayType, Required} = require('awesome-type-check')
 const User = ObjectType({
   username: Required('string'),
-  items: ArrayType(ObjectType({
-    name: Required('string'),
-    createdAt: Required('date')
-  }))
+  score: 'number'
 })
 
 typeErrors(User, {username: 'joe'}) // => undefined
-const errors = typeErrors(User, {username: 123, items: [{name: 'foo'}, {name: 123, createdAt: new Date()}]})
-errors.length // => 3
+const errors = typeErrors(User, {username: 123, score: true})
+errors.length // => 2
 errors[0].path // => ['username']
 errors[0].message // => 'must be of type string but was number'
-errors[1].path // => ['items', 0]
-errors[1].message // => 'is missing the following required keys: createdAt'
-errors[2].path // => ['items', 1, 'name']
-errors[2].message // => 'must be of type string but was number'
+errors[1].path // => ['score']
+errors[1].message // => 'must be of type number but was boolean'
 ```
 
 ## ExactObject
