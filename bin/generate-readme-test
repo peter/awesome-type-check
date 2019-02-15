@@ -1,0 +1,33 @@
+#!/usr/bin/env node
+
+const fs = require('fs')
+
+function extractCode (readme) {
+  const regex = /^```javascript\s*$(.+?)```\s*$/mgs
+  const code = []
+  let match = regex.exec(readme)
+  while (match != null) {
+    code.push(match[1])
+    match = regex.exec(readme)
+  }
+  return code
+}
+
+function fixRequire (code) {
+  return code.replace(/require\('awesome-type-check'\)/g, "require('../src/index')")
+}
+
+function generateTestCode (codeSnippets) {
+  const tests = codeSnippets.map(fixRequire).map((snippet, index) => {
+    return `
+test('readme code snippet ${index+1} works', () => {
+${snippet}
+})
+    `
+  })
+  return tests.join('\n\n')
+}
+
+const readme = fs.readFileSync('README.md').toString()
+const codeSnippets = extractCode(readme)
+fs.writeFileSync('test/readme.test.js', generateTestCode(codeSnippets))

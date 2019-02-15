@@ -53,15 +53,17 @@ A type can be specified as:
 * A `validate` function. The validate function can either be a predicate that returns `true` or `false` or a function that returns `undefined` or errors. If the validate function returns `true` or `undefined` then the type is considered valid and otherwise it is considered invalid. Errors are typically an array of `TypeError` objects.
 * A JSON schema object that optionally contains a `validate` function
 
-Here is an example of a type represented as a string:
+## Basic Types Represented as Strings
+
+Here is an example of a `typeOf` type represented as a string:
 
 ```javascript
 const {typeErrors, isValid} = require('awesome-type-check')
-const myType = 'number'
-typeErrors(myType, 123) // => undefined
-isValid(myType, 123) // => true
-typeErrors(myType, 'foobar') // => [ { Error: value "foobar" (type string) must be of type number } ]
-isValid(myType, 'foobar') // => false
+const Bonus = 'number'
+typeErrors(Bonus, 123) // => undefined
+isValid(Bonus, 123) // => true
+typeErrors(Bonus, 'foobar') // => [ { Error: must be of type number but was string } ]
+isValid(Bonus, 'foobar') // => false
 ```
 
 String types can be converted to JSON schema objects with `typeObject`:
@@ -74,6 +76,29 @@ typeObject('number')
 //      arg: 'number',
 //      validate: [Function: validate] }
 ```
+
+## TypeOf
+
+Basic types with additional metadata can be created with the `TypeOf` function:
+
+```javascript
+const {typeErrors, isValid, TypeOf} = require('awesome-type-check')
+const Bonus = TypeOf('number', {title: 'Bonus', description: 'Amount of bonus points for a user'})
+typeErrors(Bonus, 123) // => undefined
+isValid(Bonus, 123) // => true
+typeErrors(Bonus, 'foobar') // => [ { Error: must be of type number but was string } ]
+Bonus
+// { type: 'number',
+//   title: 'number',
+//   description: 'TypeOf(number)',
+//   arg: 'number',
+//   options:
+//    { title: 'Bonus',
+//      description: 'Amount of bonus points for a user' },
+//   validate: [Function: validate] }
+```
+
+## Custom Validate Functions
 
 Here is an example of a predicate validate function:
 
@@ -106,7 +131,7 @@ isValid(isEven, 2) // => true
 isValid(isEven, 3) // => false
 ```
 
-Here is an example of using `Validate` to create the same type:
+Here is an example of using the `Validate` function to create the same type:
 
 ```javascript
 const {typeErrors, isValid, TypeError, Validate} = require('awesome-type-check')
@@ -124,8 +149,105 @@ isValid(IsEven, 2) // => true
 isValid(IsEven, 3) // => false
 ```
 
+## StringType
+
+Use `StringType` to validate string values and optionally provide `minLength`, `maxLength`, and `pattern` options:
+
+```javascript
+const {typeErrors, StringType} = require('awesome-type-check')
+const Username = StringType({minLength: 3, maxLength: 50, pattern: '^[a-z0-9_-]+$'})
+typeErrors(Username, 'foobar') // => undefined
+typeErrors(Username, 123) // => [ { Error: must be of type StringType but was number } ]
+typeErrors(Username, 'fo') // => [ { Error: must be at least 3 characters long but was only 2 characters } ]
+typeErrors(Username, '!') // => [ { Error: must be at least 3 characters long but was only 1 characters }, { Error: must match pattern ^[a-z0-9_-]+$ } ]
+Username
+// { type: 'string',
+//   title: 'StringType',
+//   minLength: 3,
+//   maxLength: 50,
+//   pattern: '^[a-z0-9_-]+$',
+//   description:
+//    'String with minimum length 3 and maximum length 50 and pattern ^[a-z0-9_-]+$',
+//   options: { minLength: 3, maxLength: 50, pattern: '^[a-z0-9_-]+$' },
+//   validate: [Function: validate] }
+```
+
+## NumberType
+
+Validates number values with optional `minimum` and `maximum` restrictions:
+
+```javascript
+const {typeErrors, NumberType} = require('awesome-type-check')
+const Score = NumberType({minimum: 0, maximum: 100})
+typeErrors(Score, 0) // => undefined
+typeErrors(Score, 10) // => undefined
+typeErrors(Score, 100) // => undefined
+typeErrors(Score, 'foobar') // => [ { Error: must be of type NumberType but was string } ]
+typeErrors(Score, -1) // => [ { Error: must be at least 0 was only -1 } ]
+typeErrors(Score, 101) // => [ { Error: must be no more than 100 but was 101 } ]
+Score
+// { type: 'number',
+//   title: 'NumberType',
+//   minimum: 0,
+//   maximum: 100,
+//   description: 'Number with minimum length 0 and maximum length 100',
+//   options: { minimum: 0, maximum: 100 },
+//   validate: [Function: validate] }
+```
+
+## BoolType
+
+Validate that a value is `true` or `false`, equivalent to `TypeOf('boolean'`:
+
+```javascript
+const {typeErrors, BoolType, TypeOf} = require('awesome-type-check')
+const Active = BoolType()
+typeErrors(Active, false) // => undefined
+typeErrors(Active, true) // => undefined
+typeErrors(Active, {}) // => [ { Error: must be of type boolean but was object } ]
+typeErrors(TypeOf('boolean'), false) // => undefined
+typeErrors(TypeOf('boolean'), true) // => undefined
+typeErrors(TypeOf('boolean'), {}) // => [ { Error: must be of type boolean but was object } ]
+Active
+// { type: 'boolean',
+//   title: 'boolean',
+//   description: 'TypeOf(boolean)',
+//   arg: 'boolean',
+//   validate: [Function: validate] }
+```
+
+## NullType
+
+Validates that a value is `null`. Equivalent to `TypeOf('null)`:
+
+```javascript
+const {typeErrors, NullType} = require('awesome-type-check')
+typeErrors(NullType(), null) // => undefined
+typeErrors(NullType(), undefined) // => [ { Error: must be of type null but was undefined } ]
+typeErrors(NullType(), []) // => [ { Error: must be of type null but was array } ]
+```
+
+## ObjectType
+
+## ExactObject
+
+## ObjectOf
+
+## ArrayType
+
+## Enum
+
+## InstanceOf
+
+## Required
+
+## AllOf
+
+## AnyOf
+
 ## TODO
 
+* TypeOf arg should be string or array
 * ESLint
 * Add error toJSON test (i.e. check JSON.parse(JSON.stringify(error)))
 * Improve assertValidOptions usage - introduce SHARED_OPTIONS ({isRequired}) and default additionalKeys to false

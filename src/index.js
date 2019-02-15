@@ -77,6 +77,9 @@ function StringType (options = {}) {
   const type = compact({
     type: 'string',
     title: 'StringType',
+    minLength: options.minLength,
+    maxLength: options.maxLength,
+    pattern: options.pattern,
     description,
     options,
     validate: (value) => {
@@ -109,6 +112,8 @@ function NumberType (options = {}) {
   const type = compact({
     type: 'number',
     title: 'NumberType',
+    minimum: options.minimum,
+    maximum: options.maximum,
     description,
     options,
     validate: (value) => {
@@ -190,9 +195,9 @@ function TypeOf (type, options = {}) {
 }
 
 function Validate (validate, options = {}) {
-  const description = options.description || validate.name || 'Unnamed validate function'
+  const description = options.description || 'Validate function'
   return {
-    title: (options.title || 'Validate'),
+    title: (options.title || validate.name || 'Validate'),
     description,
     options,
     validate
