@@ -36,6 +36,14 @@ function array (value) {
   return isArray(value) ? value : [value]
 }
 
+function notArray (value) {
+  if (isArray(value) && value.length === 1) {
+    return value[0]
+  } else {
+    return value
+  }
+}
+
 function concat (...arrays) {
   return arrays.filter(notNil).reduce((a1, a2) => a1.concat(a2), [])
 }
@@ -147,6 +155,7 @@ module.exports = {
   empty,
   notEmpty,
   array,
+  notArray,
   flatten,
   merge,
   compact,

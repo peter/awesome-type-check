@@ -1,4 +1,4 @@
-const {merge, notEmpty, array, isArray, flatten, compact, difference, assertValidOptions, mapObj, typeOf, getIn, unique} = require('./util')
+const {merge, notEmpty, array, notArray, isArray, flatten, compact, difference, assertValidOptions, mapObj, typeOf, getIn, unique} = require('./util')
 const TypeError = require('./type_error')
 
 const JSON_TYPES = ['array', 'object', 'string', 'number', 'boolean', 'null']
@@ -21,7 +21,7 @@ function typeObject (type) {
   if (typeOf(type) === 'string') {
     const options = {isRequired: type.endsWith('!')}
     const types = (options.isRequired ? type.substring(0, type.length - 1) : type).split('|')
-    return TypeOf((types.length > 1 ? types : types[0]), options)
+    return TypeOf(notArray(types), options)
   } else if (typeOf(type) === 'array') {
     return ArrayType(typeObject(type[0]))
   } else if (typeOf(type) === 'function') {
@@ -182,7 +182,7 @@ function InstanceOf (klass, options = {}) {
 function TypeOf (type, options = {}) {
   if (!['string', 'array'].includes(typeOf(type))) throw new Error(`type argument to TypeOf must be string or array but was ${typeOf(type)}`)
   const _type = compact({
-    type: array(type).every(t => JSON_TYPES.includes(t)) ? (array(type).length > 1 ? type : array(type)[0]) : undefined,
+    type: array(type).every(t => JSON_TYPES.includes(t)) ? notArray(type) : undefined,
     title: array(type).join('|'),
     description: `TypeOf(${type})`,
     arg: type,

@@ -51,7 +51,8 @@ errors[1].path // => ['status']
 
 A type can be specified as:
 
-* A string that represents a type returned by the `typeOf` function, i.e. `number`, `string`, `boolean`, `function`, `object`, `array` etc. The `typeOf` function used by this library is essentially the built-in JavaScript `typeof` with a few extensions such as `null`, `undefined`, `array`, `date`, `error`, `regexp`. A string type can also have the value `any` which will validate against all values.
+* A string that represents a type returned by the `typeOf` function, i.e. `number`, `string`, `boolean`, `function`, `object`, `array` etc. The `typeOf` function used by this library is essentially the built-in JavaScript `typeof` with a few extensions such as `null`, `undefined`, `array`, `date`, `error`, `regexp`. A string type can also have the value `any` which will validate against all values. Within an `ObjectType` you can add an exclamation mark to the type of a value to indicate that the corresponding key is required, i.e. `number!`. You can specify multiple types in a string by separating them by pipes, i.e. `string|number`.
+* An array containing a single type, i.e. ['string']. This will validate all values that are arrays where all items are of the given type (syntactic sugar for `ArrayType`).
 * A `validate` function. The validate function can either be a predicate that returns `true` or `false` or a function that returns `undefined` or errors. If the validate function returns `true` or `undefined` then the type is considered valid and otherwise it is considered invalid. Errors are typically an array of `TypeError` objects.
 * A JSON schema object that optionally contains a `validate` function
 
@@ -414,8 +415,6 @@ typeErrors(Score, 'foobar')[0].message // => 'must be of type AnyOf(NumberType, 
 
 ## TODO
 
-* Syntactic sugar for string types: 'string|number!'
-* Syntactic sugar for ArrayType: ['string]
 * ESLint
 * Add error toJSON test (i.e. check JSON.parse(JSON.stringify(error)))
 * Improve assertValidOptions usage - introduce SHARED_OPTIONS ({isRequired}) and default additionalKeys to false
