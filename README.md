@@ -1,6 +1,6 @@
 # awesome-type-check
 
-A JavaScript library that provides runtime type checks / schema validation for JavaScript objects and values.
+A JavaScript library that provides runtime type checks / schema validation for JavaScript data.
 
 This library generates types that are on [JSON schema](https://json-schema.org/understanding-json-schema/) format and this makes the types easy to parse and generate documentation from. You can use a JSON schema validator like [ajv](https://github.com/epoberezkin/ajv) (and [ajv-keywords](https://github.com/epoberezkin/ajv-keywords)) to validate the types if you like but this library has validation logic built in (with a subset of the JSON schema rules).
 
@@ -300,11 +300,11 @@ errors[0].message // => 'must be of type function but was array'
 
 ## ArrayType
 
-Use `ArrayType` to validate that a value must be an `array`. Options are `minLength` and `maxLength`:
+Use `ArrayType` to validate that a value must be an `array`. Options are `minItems` and `maxItems`:
 
 ```javascript
 const {typeErrors, ArrayType} = require('awesome-type-check')
-const Numbers = ArrayType('number', {minLength: 2, maxLength: 5})
+const Numbers = ArrayType('number', {minItems: 2, maxItems: 5})
 
 typeErrors(Numbers, [1, 2]) // => undefined
 const errors = typeErrors(Numbers, ['foobar'])
@@ -417,16 +417,16 @@ typeErrors(Score, 'foobar')[0].message // => 'must be of type AnyOf(NumberType, 
 
 * ESLint
 * Add error toJSON test (i.e. check JSON.parse(JSON.stringify(error)))
-* Improve assertValidOptions usage - introduce SHARED_OPTIONS ({isRequired}) and default additionalKeys to false
+* Always preserve constructor type name (ObjectType, ArrayType etc.) in constructor property?
 * Add ajv schema validation to nested type test
+* Add comparison to other libraries in RAEDME (prop-types, superstruct, joi etc.)
 * Improve generic message if you can extract title
-* Create single ES5/UMD file with Babel/Rollup for client side use?
+* Create single ES5/UMD file with Babel/Rollup for client side use? Try https://www.pikapkg.com/blog/introducing-pika-pack
 * Create a JSFiddle with unpkg (https://medium.com/cameron-nokes/the-30-second-guide-to-publishing-a-typescript-package-to-npm-89d93ff7bccd)
 * Test ability to easily generate documentation etc. based on a nested complex type (good navigability and meta data)
 * More test cases: Enum, nested objects/arrays, AnyOf, AllOf, custom types, optional arrays (ArrayOrScalar)
 * Integration with React when used as PropTypes. Ability to turn off in production. PropTypes compatibility layer?
-* Apply to the assertValidOptions use case
-* Tuple type (Array with items array and minLength/maxLenth?)
+* Apply to the assertValidOptions use case, maybe in versioned-api?
 
 ## Resources
 

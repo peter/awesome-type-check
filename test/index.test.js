@@ -4,12 +4,17 @@ const {mapObj} = require('../src/util')
 const TypeError = require('../src/type_error')
 const {typeErrors, ObjectType, ArrayType, ExactObject, ObjectOf, StringType, Enum, TypeOf, Required} = require('../src/index')
 
-function assertSchema (schema, data) {
+function validateSchema (schema, data) {
   ajv.validate(schema, data)
-  if (ajv.errors) {
-    console.log('assertSchema errors', ajv.errors)
+  return ajv.errors
+}
+
+function assertSchema (schema, data) {
+  const ajvErrors = validateSchema(schema, data)
+  if (ajvErrors) {
+    console.log('assertSchema errors', ajvErrors)
     const error = new Error('assertSchema errors')
-    error.ajvErrors = ajv.errors
+    error.ajvErrors = ajvErrors
     error.schema = schema
     error.data = data
     throw error
@@ -212,4 +217,16 @@ test('typeErrors - validates schema object type property', () => {
   expect(typeErrors(schema, []).map(e => e.message)).toEqual(['must be of type string|number|boolean but was array'])
 
   expect(typeErrors({type: 'array'}, [])).toEqual(undefined)
+})
+
+test('ArrayType - validates as JSON schema', () => {
+  const MyArray = ArrayType('number|boolean', {maxItems: 2})
+  expect(MyArray.items.type).toEqual(['number', 'boolean'])
+  assertSchema(MyArray, [])
+  expect(validateSchema(MyArray, ['foobar'])[0].message).toEqual('should be number,boolean')
+  expect(validateSchema(MyArray, [1, 2, 3])[0].message).toEqual('should NOT have more than 2 items')
+})
+
+test('ArrayType - complains about unrecognized options', () => {
+  expect(() => ArrayType('number', {minLength: 10})).toThrowError(/unrecognized options key/i)
 })

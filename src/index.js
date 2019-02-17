@@ -68,8 +68,13 @@ function assertType (type, value) {
   }
 }
 
+function assertTypeOptions (options, validOptionTypes) {
+  const SHARED_OPTIONS = {isRequired: 'boolean'}
+  assertValidOptions(options, merge(validOptionTypes, SHARED_OPTIONS))
+}
+
 function StringType (options = {}) {
-  assertValidOptions(options, {minLength: 'number', maxLength: 'number', pattern: 'string'})
+  assertTypeOptions(options, {minLength: 'number', maxLength: 'number', pattern: 'string'})
   let description
   if (notEmpty(options)) {
     const optionsDescriptions = []
@@ -105,7 +110,7 @@ function StringType (options = {}) {
 }
 
 function NumberType (options = {}) {
-  assertValidOptions(options, {minimum: 'number', maximum: 'number'})
+  assertTypeOptions(options, {minimum: 'number', maximum: 'number'})
   let description
   if (notEmpty(options)) {
     const optionsDescriptions = []
@@ -209,7 +214,7 @@ function Validate (validate, options = {}) {
 }
 
 function ObjectType (properties, options = {}) {
-  assertValidOptions(options, {title: 'string', required: ['string'], additionalProperties: 'boolean', patternProperties: 'object'})
+  assertTypeOptions(options, {title: 'string', required: ['string'], additionalProperties: 'boolean', patternProperties: 'object'})
   properties = mapObj(properties, (k, v) => typeObject(v))
   const keysMarkedRequired = Object.keys(properties).filter(key => getIn(typeObject(properties[key]), 'options.isRequired') === true)
   options.required = unique((options.required || []).concat(keysMarkedRequired))
@@ -283,13 +288,15 @@ function ObjectOf (valueType, options = {}) {
 
 function ArrayType (items = 'any', options = {}) {
   items = typeObject(items)
-  assertValidOptions(options, {minLength: 'number', maxLength: 'number'})
-  const description = `Array with items ${toString(items)}`
+  assertTypeOptions(options, {minItems: 'number', maxItems: 'number'})
+  const description = `Array with ${toString(items)}`
   const type = compact({
     type: 'array',
     title: 'ArrayType',
     description,
-    items,
+    items: items,
+    minItems: options.minItems,
+    maxItems: options.maxItems,
     options,
     validate: (value, path = []) => {
       if (!Array.isArray(value)) return [typeOfError(type, value, {path})]
@@ -298,11 +305,11 @@ function ArrayType (items = 'any', options = {}) {
         return typeErrors(items, item, path.concat([index]))
       })))
       if (notEmpty(itemErrors)) errors.push(itemErrors)
-      if (options.minLength && value.length < options.minLength) {
-        errors.push(new TypeError(type, value, `must have at least ${options.minLength} items but had only ${value.length}`, {path, code: 'minLength'}))
+      if (options.minItems && value.length < options.minItems) {
+        errors.push(new TypeError(type, value, `must have at least ${options.minItems} items but had only ${value.length}`, {path, code: 'minItems'}))
       }
-      if (options.maxLength && value.length > options.maxLength) {
-        errors.push(new TypeError(type, value, `must have no more than ${options.minLength} items but had ${value.length}`, {path, code: 'maxLength'}))
+      if (options.maxItems && value.length > options.maxItems) {
+        errors.push(new TypeError(type, value, `must have no more than ${options.maxItems} items but had ${value.length}`, {path, code: 'maxItems'}))
       }
       return notEmpty(errors) ? flatten(errors) : undefined
     }
