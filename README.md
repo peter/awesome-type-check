@@ -4,7 +4,7 @@ A JavaScript library that provides runtime type checks / schema validation for J
 
 This library generates types that are on [JSON schema](https://json-schema.org/understanding-json-schema/) format and this makes the types easy to parse and generate documentation from. You can use a JSON schema validator like [ajv](https://github.com/epoberezkin/ajv) (and [ajv-keywords](https://github.com/epoberezkin/ajv-keywords)) to validate the types if you like but this library has validation logic built in (with a subset of the JSON schema rules).
 
-This library basically provides:
+This library provides:
 
 * A thin layer of syntactic sugar on top of JSON schema
 * Extensions to JSON schema - essentially the addition of a `validate` function - that allows us to do typeof/instanceof checks as well as any custom validation that we need for our types. JSON schema is great for validating JSON data but JSON data only has six different types (object, array, string, number, boolean, and null). In JavaScript we typically need to validate more types and this library aims to help with that.
@@ -28,7 +28,6 @@ npm install awesome-type-check
 const {typeErrors, TypeError, ObjectType, StringType, Enum, Required} = require('awesome-type-check')
 
 const Username = StringType({minLength: 3, maxLength: 50, pattern: '^[a-z0-9_-]+$'})
-
 const User = ObjectType({
     name: 'string',
     tags: ['string'],
@@ -37,7 +36,12 @@ const User = ObjectType({
     bonus: (v) => typeof v === 'number' && v > 0
 })
 
-const errors = typeErrors(User, {name: 'Joe', tags: ['admin', 'vip'], username: 'j', status: 'foobar'})
+const errors = typeErrors(User, {
+  name: 'Joe',
+  tags: ['admin', 'vip'],
+  username: 'j',
+  status: 'foobar'
+})
 
 errors.length // => 2
 errors.every(e => e instanceof TypeError) // => true
@@ -52,9 +56,35 @@ errors[1].path // => ['status']
 A type can be specified as:
 
 * A string that represents a type returned by the `typeOf` function, i.e. `number`, `string`, `boolean`, `function`, `object`, `array` etc. The `typeOf` function used by this library is essentially the built-in JavaScript `typeof` with a few extensions such as `null`, `undefined`, `array`, `date`, `error`, `regexp`. A string type can also have the value `any` which will validate against all values. Within an `ObjectType` you can add an exclamation mark to the type of a value to indicate that the corresponding key is required, i.e. `number!`. You can specify multiple types in a string by separating them by pipes, i.e. `string|number`.
-* An array containing a single type, i.e. ['string']. This will validate all values that are arrays where all items are of the given type (syntactic sugar for `ArrayType`).
-* A `validate` function. The validate function can either be a predicate that returns `true` or `false` or a function that returns `undefined` or errors. If the validate function returns `true` or `undefined` then the type is considered valid and otherwise it is considered invalid. Errors are typically an array of `TypeError` objects.
+* An array containing a single type, i.e. ['string']. This will validate all values that are arrays where all items are of the given type (syntactic sugar for [`ArrayType`](#arraytype)).
+* A `validate` function. The validate function can either be a predicate that returns `true` or `false` or a function that returns `undefined` or errors. If the validate function returns `true` or `undefined` then the data is considered valid and otherwise it is considered invalid. Errors are typically an array of `TypeError` objects.
 * A JSON schema object that optionally contains a `validate` function
+
+## Options
+
+All built-in types accept an options argument and these options are shared across all types:
+
+* `title` - the name of the type, for documentation purposes
+* `description` - a description of the type, for documentation purposes
+* `isRequired` - used to indicate that the corresponding key in an object is required (equivalent to (`Required`)[#required])
+
+## Built-In Types
+
+* [StringType](#stringtype)
+* [NumberType](#numbertype)
+* [BoolType](#booltype)
+* [NullType](#nulltype)
+* [Enum](#enum)
+* [InstanceOf](#instanceOf)
+* [TypeOf](#typeof)
+* [ObjecType](#objectype)
+* [ExactObject](#exactobject)
+* [ObjectOf](#objectof)
+* [ArrayType](#arraytype)
+* [AllOf](#allof)
+* [AnyOf](#anyof)
+
+In addition to the types listed above you can create your own types by using [custom validate functions](#custom-validate-functions).
 
 ## Basic Types Represented as Strings
 
