@@ -101,8 +101,8 @@ const {typeErrors, isValid, TypeOf} = require('awesome-type-check')
 const Bonus = TypeOf('number', {title: 'Bonus', description: 'Amount of bonus points for a user'})
 typeErrors(Bonus, 123) // => undefined
 isValid(Bonus, 123) // => true
-typeErrors(Bonus, 'foobar')[0].message // => 'must be of type number but was string'
-Bonus // => {type: 'number', title: 'number', description: 'TypeOf(number)', arg: 'number'}
+typeErrors(Bonus, 'foobar')[0].message // => 'must be of type Bonus (number) but was string'
+Bonus // => {type: 'number', title: 'Bonus', description: 'Amount of bonus points for a user', arg: 'number'}
 ```
 
 You can also provide `TypeOf` with an array of types (equivalent to `AnyOf(types)`):
@@ -422,6 +422,7 @@ typeErrors(Score, 'foobar')[0].message // => 'must be of type AnyOf(NumberType, 
 * Add comparison to other libraries in RAEDME (prop-types, superstruct, joi etc.)
 * Improve generic message if you can extract title
 * Create single ES5/UMD file with Babel/Rollup for client side use? Try https://www.pikapkg.com/blog/introducing-pika-pack
+* Remove @pika/pack from package.json and from pkg if we can't get it to work properly
 * Create a JSFiddle with unpkg (https://medium.com/cameron-nokes/the-30-second-guide-to-publishing-a-typescript-package-to-npm-89d93ff7bccd)
 * Test ability to easily generate documentation etc. based on a nested complex type (good navigability and meta data)
 * More test cases: Enum, nested objects/arrays, AnyOf, AllOf, custom types, optional arrays (ArrayOrScalar)

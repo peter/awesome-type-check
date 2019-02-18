@@ -150,7 +150,7 @@ test('ObjectOf - can specify an object with a certain value type (via patternPro
 
   expect(typeErrors(Users, {})).toEqual(undefined)
 
-  expectObjectErrors(Users, {foo: 1}, {'foo': 'must be of type User (ObjectType) but was number'})
+  expectObjectErrors(Users, {foo: 1}, {'foo': 'must be of type User (object) but was number'})
 })
 
 test('we can get good error metadata (type/value/path) from nested data structures (objects/arrays)', () => {
@@ -229,4 +229,19 @@ test('ArrayType - validates as JSON schema', () => {
 
 test('ArrayType - complains about unrecognized options', () => {
   expect(() => ArrayType('number', {minLength: 10})).toThrowError(/unrecognized options key/i)
+})
+
+test('ArrayType - accepts options minItems, maxItems, title, description, isRequired', () => {
+  const options = {minItems: 1, maxItems: 3, title: 'Tags', description: 'User tags', isRequired: true}
+  const User = ObjectType({
+    tags: ArrayType('string', options)
+  })
+  expect(User.name).toEqual('ObjectType')
+  expect(User.properties.tags.name).toEqual('ArrayType')
+  expect(User.properties.tags.title).toEqual(options.title)
+  expect(User.properties.tags.description).toEqual(options.description)
+  expect(User.properties.tags.minItems).toEqual(options.minItems)
+  expect(User.properties.tags.maxItems).toEqual(options.maxItems)
+  expect(typeErrors(User, {tags: ['foobar']})).toEqual(undefined)
+  expect(validateSchema(User, {tags: ['foobar']})).toEqual(null)
 })
