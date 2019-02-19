@@ -1,4 +1,4 @@
-const {merge, notEmpty, array, notArray, isArray, flatten, compact, difference, assertValidOptions, mapObj, typeOf, getIn, unique} = require('./util')
+const {merge, notEmpty, empty, array, notArray, isArray, flatten, compact, difference, assertValidOptions, mapObj, typeOf, getIn, unique} = require('./util')
 const TypeError = require('./type_error')
 
 const JSON_TYPES = ['array', 'object', 'string', 'number', 'boolean', 'null']
@@ -69,7 +69,7 @@ function assertType (type, value) {
   }
 }
 
-function assertTypeOptions (options, validOptionTypes) {
+function assertTypeOptions (options, validOptionTypes = {}) {
   const SHARED_OPTIONS = {name: 'string', title: 'string', description: 'string', isRequired: 'boolean'}
   assertValidOptions(options, merge(validOptionTypes, SHARED_OPTIONS))
 }
@@ -152,6 +152,8 @@ function NullType (options = {}) {
 }
 
 function Enum (values, options = {}) {
+  if (typeOf(values) !== 'array' || values.length === 0) throw new Error('Enum expects a non empty array of values as first argument')
+  assertTypeOptions(options)
   const description = options.description || `Enum(${values.join(', ')})`
   const type = {
     name: (options.name || 'Enum'),
@@ -171,6 +173,8 @@ function Enum (values, options = {}) {
 }
 
 function InstanceOf (klass, options = {}) {
+  if (empty(klass) || !klass.name || !klass.constructor) throw new Error('InstanceOf expects a class as first argument')
+  assertTypeOptions(options)
   const description = options.description || `InstanceOf(${klass.name})`
   const type = {
     name: (options.name || 'InstanceOf'),
@@ -190,7 +194,8 @@ function InstanceOf (klass, options = {}) {
 }
 
 function TypeOf (type, options = {}) {
-  if (!['string', 'array'].includes(typeOf(type))) throw new Error(`type argument to TypeOf must be string or array but was ${typeOf(type)}`)
+  if (!['string', 'array'].includes(typeOf(type)) || empty(type)) throw new Error('TypeOf expects a non-empty string or array as first argument')
+  assertTypeOptions(options)
   const _type = compact({
     type: array(type).every(t => JSON_TYPES.includes(t)) ? notArray(type) : undefined,
     name: (options.name || 'TypeOf'),
@@ -210,6 +215,7 @@ function TypeOf (type, options = {}) {
 }
 
 function Validate (validate, options = {}) {
+  if (typeof validate !== 'function') throw new Error('Validate expects a validation function as its first argument')
   const description = options.description || 'Validate function'
   return {
     name: (options.name || 'Validate'),
@@ -221,6 +227,7 @@ function Validate (validate, options = {}) {
 }
 
 function ObjectType (properties, options = {}) {
+  if (typeof properties !== 'object' || properties == null) throw new Error('ObjectType expects properties object as its first argument') 
   assertTypeOptions(options, {title: 'string', required: ['string'], additionalProperties: 'boolean', patternProperties: 'object'})
   properties = mapObj(properties, (k, v) => typeObject(v))
   const keysMarkedRequired = Object.keys(properties).filter(key => getIn(typeObject(properties[key]), 'options.isRequired') === true)
@@ -332,6 +339,7 @@ function Required (type) {
 }
 
 function AllOf (types, options = {}) {
+  if (typeOf(types) !== 'array' || empty(types)) throw new Error('AllOf expects non-empty array as its first argument')
   types = types.map(typeObject)
   const description = options.description || `AllOf(${types.map(toString).join(', ')})`
   return {
@@ -351,6 +359,7 @@ function AllOf (types, options = {}) {
 }
 
 function AnyOf (types, options = {}) {
+  if (typeOf(types) !== 'array' || empty(types)) throw new Error('AnyOf expects non-empty array as its first argument')
   types = types.map(typeObject)
   const description = options.description || `AnyOf(${types.map(toString).join(', ')})`
   const type = {

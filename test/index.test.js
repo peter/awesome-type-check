@@ -2,7 +2,7 @@ const Ajv = require('ajv')
 const ajv = new Ajv()
 const {mapObj} = require('../src/util')
 const TypeError = require('../src/type_error')
-const {typeErrors, ObjectType, ArrayType, ExactObject, ObjectOf, StringType, Enum, TypeOf, Required} = require('../src/index')
+const {typeErrors, ObjectType, ArrayType, ExactObject, InstanceOf, ObjectOf, Validate, StringType, Enum, TypeOf, Required, AllOf, AnyOf} = require('../src/index')
 
 function validateSchema (schema, data) {
   ajv.validate(schema, data)
@@ -244,4 +244,13 @@ test('ArrayType - accepts options minItems, maxItems, title, description, isRequ
   expect(User.properties.tags.maxItems).toEqual(options.maxItems)
   expect(typeErrors(User, {tags: ['foobar']})).toEqual(undefined)
   expect(validateSchema(User, {tags: ['foobar']})).toEqual(null)
+})
+
+test('Types that take a required argument will throw error if not provided', () => {
+  expect(() => Enum()).toThrowError(/Enum expects a non empty array/)
+  expect(() => InstanceOf()).toThrowError(/InstanceOf expects/)
+  expect(() => TypeOf()).toThrowError(/TypeOf expects/)
+  expect(() => Validate()).toThrowError(/Validate expects/)
+  expect(() => AllOf()).toThrowError(/AllOf expects/)
+  expect(() => AnyOf()).toThrowError(/AnyOf expects/)
 })
