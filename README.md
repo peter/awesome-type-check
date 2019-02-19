@@ -36,12 +36,14 @@ const User = ObjectType({
     bonus: (v) => typeof v === 'number' && v > 0
 })
 
-const errors = typeErrors(User, {
+const user = {
   name: 'Joe',
   tags: ['admin', 'vip'],
   username: 'j',
   status: 'foobar'
-})
+}
+
+const errors = typeErrors(User, user)
 
 errors.length // => 2
 errors.every(e => e instanceof TypeError) // => true
@@ -56,13 +58,13 @@ errors[1].path // => ['status']
 A type can be specified as:
 
 * A string that represents a type returned by the `typeOf` function, i.e. `number`, `string`, `boolean`, `function`, `object`, `array` etc. The `typeOf` function used by this library is essentially the built-in JavaScript `typeof` with a few extensions such as `null`, `undefined`, `array`, `date`, `error`, `regexp`. A string type can also have the value `any` which will validate against all values. Within an `ObjectType` you can add an exclamation mark to the type of a value to indicate that the corresponding key is required, i.e. `number!`. You can specify multiple types in a string by separating them by pipes, i.e. `string|number`.
-* An array containing a single type, i.e. ['string']. This will validate all values that are arrays where all items are of the given type (syntactic sugar for [`ArrayType`](#arraytype)).
-* A `validate` function. The validate function can either be a predicate that returns `true` or `false` or a function that returns `undefined` or errors. If the validate function returns `true` or `undefined` then the data is considered valid and otherwise it is considered invalid. Errors are typically an array of `TypeError` objects.
+* An array containing a single type, i.e. ['string']. This will validate all values that are arrays where all items are of the given type (syntactic sugar for [ArrayType](#arraytype)).
+* A `validate` function. The validate function can either be a predicate that returns `true` or `false` or a function that returns `undefined` or errors. If the validate function returns `true` or `undefined` then the data is considered valid and otherwise it is considered invalid. Errors are typically an array of [TypeError](#typerror) objects.
 * A JSON schema object that optionally contains a `validate` function
 
 ## Options
 
-All built-in types accept an options argument and these options are shared across all types:
+All built-in types take an options argument and the following options are shared across all types:
 
 * `title` - the name of the type, for documentation purposes
 * `description` - a description of the type, for documentation purposes
@@ -221,6 +223,17 @@ errors[2].path // => ['items', 1, 'name']
 errors[2].message // => 'must be of type string but was number'
 ```
 
+## TypeError
+
+On validation failure the `typeErrors` method will return an array of `TypeError` objects with these properties:
+
+* `stack` - a stacktrace to help you figure out where in your code validation failed
+* `message` - an error message
+* `type` - the type definition (JSON schema object) for which validation failed
+* `value` - the data for which validation failed
+* `path` - if validation failed inside an object or array (or a nested combination of them) the path will show you exactly where in the data structure validation failed
+* `code` - an error category/classification, i.e. `maxLength` if a string is too long, or `typeof` if the data type was wrong etc.
+
 ## StringType
 
 Use `StringType` to validate string values and optionally provide `minLength`, `maxLength`, and `pattern` options:
@@ -269,7 +282,7 @@ Active // => {type: 'boolean', title: 'boolean', description: 'TypeOf(boolean)',
 
 ## NullType
 
-Validates that a value is `null`. Equivalent to `TypeOf('null)`:
+Validates that a value is `null`. Equivalent to `TypeOf('null')`:
 
 ```javascript
 const {typeErrors, NullType} = require('awesome-type-check')
