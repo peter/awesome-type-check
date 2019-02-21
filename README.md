@@ -62,14 +62,6 @@ A type can be specified as:
 * A `validate` function. The validate function can either be a predicate that returns `true` or `false` or a function that returns `undefined` or errors. If the validate function returns `true` or `undefined` then the data is considered valid and otherwise it is considered invalid. Errors are typically an array of [TypeError](#typerror) objects.
 * A JSON schema object that optionally contains a `validate` function
 
-## Options
-
-All built-in types take an options argument and the following options are shared across all types:
-
-* `title` - the name of the type, for documentation purposes
-* `description` - a description of the type, for documentation purposes
-* `isRequired` - used to indicate that the corresponding key in an object is required (equivalent to (`Required`)[#required])
-
 ## Built-In Types
 
 * [StringType](#stringtype)
@@ -89,6 +81,14 @@ All built-in types take an options argument and the following options are shared
 
 In addition to the types listed above you can create your own types by using [custom validate functions](#custom-validate-functions).
 
+## Options
+
+All built-in types take an options argument and the following options are shared across all types:
+
+* `title` - the name of the type, for documentation purposes
+* `description` - a description of the type, for documentation purposes
+* `isRequired` - used to indicate that the corresponding key in an object is required (equivalent to (Required)[#required])
+
 ## Basic Types Represented as Strings
 
 Here is an example of a `typeOf` type represented as a string:
@@ -103,7 +103,7 @@ typeErrors(Bonus, 'foobar')[0].message // => 'must be of type number but was str
 isValid(Bonus, 'foobar') // => false
 ```
 
-You can allow for multiple types by separating them by a pipe (equivalent to `AnyOf`):
+You can allow for multiple types by separating them by a pipe (equivalent to [AnyOf](#anyof)):
 
 ```javascript
 const {typeErrors} = require('awesome-type-check')
