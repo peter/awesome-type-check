@@ -82,6 +82,7 @@ All built-in types take an options argument and the following options are shared
 * [ObjecType](#objectype)
 * [ExactObject](#exactobject)
 * [ObjectOf](#objectof)
+* [NestedObject](#nestedobject)
 * [ArrayType](#arraytype)
 * [AllOf](#allof)
 * [AnyOf](#anyof)
@@ -203,13 +204,43 @@ isValid(IsEven, 3) // => false
 You can use `ObjectType` and `ArrayType` to validate nested data:
 
 ```javascript
-const {typeErrors, ObjectType, ArrayType, Required} = require('awesome-type-check')
+const {typeErrors, ObjectType, ArrayType} = require('awesome-type-check')
 const User = ObjectType({
-  username: Required('string'),
+  username: 'string!',
   items: ArrayType(ObjectType({
-    name: Required('string'),
-    createdAt: Required('date')
+    name: 'string!',
+    createdAt: 'date!'
   }))
+})
+
+typeErrors(User, {username: 'joe'}) // => undefined
+const errors = typeErrors(User, {username: 123, items: [{name: 'foo'}, {name: 123, createdAt: new Date()}]})
+errors.length // => 3
+errors[0].path // => ['username']
+errors[0].message // => 'must be of type string but was number'
+errors[1].path // => ['items', 0]
+errors[1].message // => 'is missing the following required keys: createdAt'
+errors[2].path // => ['items', 1, 'name']
+errors[2].message // => 'must be of type string but was number'
+```
+
+See [NestedObject](#nesteobject) below for a slightly nicer syntax for nested data.
+
+## NestedObject
+
+`NestedObject` is a wrapper around `ObjectType` that provides some syntactic sugar for validating nested data.
+Any object literals nested in the structure provided to `NestedObject` will be wrapped by the `ObjectType`
+function (i.e. interpreted as object properties) unless they contain a `validate` property with a value
+of type function (i.e. any nested built-in types will be preserved):
+
+```javascript
+const {typeErrors, NestedObject} = require('awesome-type-check')
+const User = NestedObject({
+  username: 'string!',
+  items: [{
+    name: 'string!',
+    createdAt: 'date!'
+  }]
 })
 
 typeErrors(User, {username: 'joe'}) // => undefined
@@ -459,6 +490,7 @@ typeErrors(Score, 'foobar')[0].message // => 'must be of type AnyOf(NumberType, 
 ## TODO
 
 * ESLint
+* Unit test for NestedObject
 * Add error toJSON test (i.e. check JSON.parse(JSON.stringify(error)))
 * Always preserve constructor type name (ObjectType, ArrayType etc.) in constructor property?
 * Add ajv schema validation to nested type test

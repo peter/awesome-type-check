@@ -215,7 +215,7 @@ function TypeOf (type, options = {}) {
 }
 
 function Validate (validate, options = {}) {
-  if (typeof validate !== 'function') throw new Error('Validate expects a validation function as its first argument')
+  if (typeOf(validate) !== 'function') throw new Error('Validate expects a validation function as its first argument')
   const description = options.description || 'Validate function'
   return {
     name: (options.name || 'Validate'),
@@ -227,7 +227,7 @@ function Validate (validate, options = {}) {
 }
 
 function ObjectType (properties, options = {}) {
-  if (typeof properties !== 'object' || properties == null) throw new Error('ObjectType expects properties object as its first argument') 
+  if (typeOf(properties) !== 'object' || properties == null) throw new Error('ObjectType expects properties object as its first argument') 
   assertTypeOptions(options, {title: 'string', required: ['string'], additionalProperties: 'boolean', patternProperties: 'object'})
   properties = mapObj(properties, (k, v) => typeObject(v))
   const keysMarkedRequired = Object.keys(properties).filter(key => getIn(typeObject(properties[key]), 'options.isRequired') === true)
@@ -254,7 +254,7 @@ function ObjectType (properties, options = {}) {
     required: options.required,
     options,
     validate: (value, path = []) => {
-      if (typeof value !== 'object') return [typeOfError(type, value, {path})]
+      if (typeOf(value) !== 'object') return [typeOfError(type, value, {path})]
       const errors = []
       if (notEmpty(options.required)) {
         const missingKeys = difference(options.required, Object.keys(value))
@@ -298,6 +298,21 @@ function ExactObject (properties, options = {}) {
 
 function ObjectOf (valueType, options = {}) {
   return ObjectType({}, merge(options, {name: 'ObjectOf', patternProperties: {'.*': valueType}}))
+}
+
+function convertNested (properties, options = {}) {
+  if (typeOf(properties) === 'object' && typeOf(properties.validate) !== 'function') {
+    return ObjectType(mapObj(properties, (k, v) => convertNested(v)), options)
+  } else if (typeOf(properties) === 'array') {
+    return typeObject(properties.map(item => convertNested(item, options)))
+  } else {
+    return typeObject(properties)
+  }
+}
+
+function NestedObject (properties, options = {}) {
+  if (typeOf(properties) !== 'object' || properties == null) throw new Error('NestedObject expects properties object as its first argument') 
+  return convertNested(properties, options)
 }
 
 function ArrayType (items = 'any', options = {}) {
@@ -393,6 +408,7 @@ module.exports = {
   ObjectType,
   ExactObject,
   ObjectOf,
+  NestedObject,
   ArrayType,
   Enum,
   InstanceOf,

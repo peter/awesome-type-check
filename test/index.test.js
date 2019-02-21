@@ -209,6 +209,10 @@ test('we can get good error metadata (type/value/path) from nested data structur
   expect(multipleErrors.map(e => e.path.join('.')).sort()).toEqual(['foo.bar.0.baz', 'name', 'topLevelNumbers'])
 })
 
+test('NestedObject - provides syntactic sugar over ObjectType for nested data', () => {
+  // TODO: test nested built-in types are preserved
+})
+
 test('typeErrors - validates schema object type property', () => {
   const schema = {type: ['string', 'number', 'boolean']}
   expect(typeErrors(schema, 'foobar')).toEqual(undefined)
