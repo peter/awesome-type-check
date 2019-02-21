@@ -2,7 +2,7 @@ const Ajv = require('ajv')
 const ajv = new Ajv()
 const {mapObj} = require('../src/util')
 const TypeError = require('../src/type_error')
-const {typeErrors, ObjectType, ArrayType, ExactObject, InstanceOf, ObjectOf, Validate, StringType, Enum, TypeOf, Required, AllOf, AnyOf} = require('../src/index')
+const {typeErrors, ObjectType, NestedObject, ArrayType, ExactObject, InstanceOf, ObjectOf, Validate, StringType, Enum, TypeOf, Required, AllOf, AnyOf} = require('../src/index')
 
 function validateSchema (schema, data) {
   ajv.validate(schema, data)
@@ -65,7 +65,7 @@ test('ObjectType without options - checks types of keys, keys are optional, addi
 
   expectObjectErrors(User, {name: 'Joe', username: 'j', status: 'foobar'}, {
     status: 'must be one of: active, inactive',
-    username: 'must be at least 3 characters long but was only 1 characters'
+    username: 'must have at least 3 characters but had only 1'
   })
 })
 
@@ -210,7 +210,43 @@ test('we can get good error metadata (type/value/path) from nested data structur
 })
 
 test('NestedObject - provides syntactic sugar over ObjectType for nested data', () => {
-  // TODO: test nested built-in types are preserved
+  const NestedData = NestedObject({
+    name: 'string!',
+    topLevelNumbers: ArrayType('number', {title: 'Awesome Number', maxItems: 2}),
+    foo: {
+      bar: [{
+        baz: 'boolean!',
+        boo: StringType({maxLength: 3})
+      }]
+    }
+  })
+
+  expect(typeErrors(NestedData, {name: 'joe'})).toEqual(undefined)
+  expect(typeErrors(NestedData, {name: 'joe', topLevelNumbers: [1, 2], foo: {bar: [{baz: true}]}})).toEqual(undefined)
+  expect(typeErrors(NestedData, {name: 'joe', topLevelNumbers: [1, 2], foo: {bar: [{baz: true, boo: 'abc'}]}})).toEqual(undefined)
+
+  const topLevelErrors = typeErrors(NestedData, {})
+  expect(topLevelErrors.length).toEqual(1)
+  expect(topLevelErrors[0].type).toEqual(NestedData)
+  expect(topLevelErrors[0].value).toEqual({})
+  expect(topLevelErrors[0].path).toEqual(undefined)
+  expect(topLevelErrors[0].code).toEqual('required')
+  expect(topLevelErrors[0].message).toEqual('is missing the following required keys: name')
+
+  let invalidData = {name: 'joe', topLevelNumbers: [1, 2], foo: {bar: [{baz: true, boo: 'abcd'}]}}
+  expect(typeErrors(NestedData, invalidData)[0].message).toEqual('must have at most 3 characters but had 4')
+
+  invalidData = {name: 'joe', topLevelNumbers: [1, 2], foo: {bar: [{}]}}
+  expect(typeErrors(NestedData, invalidData)[0].message).toEqual('is missing the following required keys: baz')
+
+  invalidData = {name: 'joe', topLevelNumbers: [1, 2], foo: 'foo'}
+  expect(typeErrors(NestedData, invalidData)[0].message).toEqual('must be of type ObjectType but was string')
+
+  invalidData = {name: 'joe', topLevelNumbers: [1, 2], foo: {bar: 'bar'}}
+  expect(typeErrors(NestedData, invalidData)[0].message).toEqual('must be of type ArrayType but was string')
+
+  invalidData = {name: 'joe', topLevelNumbers: [1, 2, 3]}
+  expect(typeErrors(NestedData, invalidData)[0].message).toEqual('must have no more than 2 items but had 3')
 })
 
 test('typeErrors - validates schema object type property', () => {

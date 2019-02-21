@@ -97,10 +97,10 @@ function StringType (options = {}) {
       if (typeOf(value) !== 'string') return [typeOfError(type, value)]
       const errors = []
       if (options.minLength !== undefined && value.length < options.minLength) {
-        errors.push(new TypeError(type, value, `must be at least ${options.minLength} characters long but was only ${value.length} characters`, {code: 'minLength'}))
+        errors.push(new TypeError(type, value, `must have at least ${options.minLength} characters but had only ${value.length}`, {code: 'minLength'}))
       }
       if (options.maxLength !== undefined && value.length > options.maxLength) {
-        errors.push(new TypeError(type, value, `must be no more than ${options.maxLength} characters long but was ${value.length} characters`, {code: 'maxLength'}))
+        errors.push(new TypeError(type, value, `must have at most ${options.maxLength} characters but had ${value.length}`, {code: 'maxLength'}))
       }
       if (options.pattern && !value.match(new RegExp(options.pattern))) {
         errors.push(new TypeError(type, value, `must match pattern ${options.pattern}`, {code: 'pattern'}))
@@ -247,7 +247,7 @@ function ObjectType (properties, options = {}) {
   const type = compact({
     type: 'object',
     name: (options.name || 'ObjectType'),
-    title: (options.title || 'ObjectTYpe'),
+    title: (options.title || 'ObjectType'),
     description: (options.description || description),
     properties,
     additionalProperties: options.additionalProperties,
@@ -302,10 +302,13 @@ function ObjectOf (valueType, options = {}) {
 
 function convertNested (properties, options = {}) {
   if (typeOf(properties) === 'object' && typeOf(properties.validate) !== 'function') {
+    // console.log('pm debug case 1 (object)', properties)
     return ObjectType(mapObj(properties, (k, v) => convertNested(v)), options)
   } else if (typeOf(properties) === 'array') {
-    return typeObject(properties.map(item => convertNested(item, options)))
+    // console.log('pm debug case 2 (array)', properties)
+    return typeObject(properties.map(item => convertNested(item)))
   } else {
+    // console.log('pm debug case 3 (other)', properties)
     return typeObject(properties)
   }
 }

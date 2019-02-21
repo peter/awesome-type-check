@@ -47,7 +47,7 @@ const errors = typeErrors(User, user)
 
 errors.length // => 2
 errors.every(e => e instanceof TypeError) // => true
-errors[0].message // => 'must be at least 3 characters long but was only 1 characters'
+errors[0].message // => 'must have at least 3 characters but had only 1'
 errors[0].path // => ['username']
 errors[1].message // => 'must be one of: active, inactive'
 errors[1].path // => ['status']
@@ -274,8 +274,8 @@ const {typeErrors, StringType} = require('awesome-type-check')
 const Username = StringType({minLength: 3, maxLength: 50, pattern: '^[a-z0-9_-]+$'})
 typeErrors(Username, 'foobar') // => undefined
 typeErrors(Username, 123)[0].message // => 'must be of type StringType but was number'
-typeErrors(Username, 'fo')[0].message // => 'must be at least 3 characters long but was only 2 characters'
-typeErrors(Username, '!').map(e => e.message) // => ['must be at least 3 characters long but was only 1 characters', 'must match pattern ^[a-z0-9_-]+$']
+typeErrors(Username, 'fo')[0].message // => 'must have at least 3 characters but had only 2'
+typeErrors(Username, '!').map(e => e.message) // => ['must have at least 3 characters but had only 1', 'must match pattern ^[a-z0-9_-]+$']
 Username // => { type: 'string', title: 'StringType', minLength: 3, maxLength: 50, pattern: '^[a-z0-9_-]+$', description: 'String with minimum length 3 and maximum length 50 and pattern ^[a-z0-9_-]+$',}
 ```
 
