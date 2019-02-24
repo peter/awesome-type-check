@@ -1,7 +1,7 @@
 {
   "name": "awesome-type-check",
   "description": "Runtime type checks / schema validation for JavaScript objects and values.",
-  "version": "0.0.16",
+  "version": "0.0.17",
   "license": "ISC",
   "esnext": "dist-src/index.js",
   "main": "dist-node/index.js",
