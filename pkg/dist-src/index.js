@@ -1,6 +1,7 @@
 const {
   merge,
   notEmpty,
+  empty,
   array,
   notArray,
   isArray,
@@ -19,14 +20,16 @@ const TypeError = require('./type_error');
 const JSON_TYPES = ['array', 'object', 'string', 'number', 'boolean', 'null'];
 
 function toString(type) {
+  const baseType = notEmpty(type.type) ? array(type.type).join('|') : undefined;
+
   if (typeOf(type) === 'string') {
     return type;
   } else if (type.title) {
-    return type.title;
+    return baseType && !type.title.toLowerCase().includes(baseType) ? `${type.title} (${baseType})` : type.title;
   } else if (type.name) {
-    return type.name;
+    return baseType && !type.name.toLowerCase().includes(baseType) ? `${type.name} (${baseType})` : type.name;
   } else if (notEmpty(type.type)) {
-    return array(type.type).join('|');
+    return baseType;
   } else {
     return 'unnamed custom type';
   }
@@ -100,8 +103,11 @@ function assertType(type, value) {
   }
 }
 
-function assertTypeOptions(options, validOptionTypes) {
+function assertTypeOptions(options, validOptionTypes = {}) {
   const SHARED_OPTIONS = {
+    name: 'string',
+    title: 'string',
+    description: 'string',
     isRequired: 'boolean'
   };
   assertValidOptions(options, merge(validOptionTypes, SHARED_OPTIONS));
@@ -125,24 +131,25 @@ function StringType(options = {}) {
 
   const type = compact({
     type: 'string',
-    title: 'StringType',
+    name: options.name || 'StringType',
+    title: options.title || 'StringType',
     minLength: options.minLength,
     maxLength: options.maxLength,
     pattern: options.pattern,
-    description,
+    description: options.description || description,
     options,
     validate: value => {
       if (typeOf(value) !== 'string') return [typeOfError(type, value)];
       const errors = [];
 
       if (options.minLength !== undefined && value.length < options.minLength) {
-        errors.push(new TypeError(type, value, `must be at least ${options.minLength} characters long but was only ${value.length} characters`, {
+        errors.push(new TypeError(type, value, `must have at least ${options.minLength} characters but had only ${value.length}`, {
           code: 'minLength'
         }));
       }
 
       if (options.maxLength !== undefined && value.length > options.maxLength) {
-        errors.push(new TypeError(type, value, `must be no more than ${options.maxLength} characters long but was ${value.length} characters`, {
+        errors.push(new TypeError(type, value, `must have at most ${options.maxLength} characters but had ${value.length}`, {
           code: 'maxLength'
         }));
       }
@@ -175,10 +182,11 @@ function NumberType(options = {}) {
 
   const type = compact({
     type: 'number',
-    title: 'NumberType',
+    name: options.name || 'NumberType',
+    title: options.title || 'NumberType',
     minimum: options.minimum,
     maximum: options.maximum,
-    description,
+    description: options.description || description,
     options,
     validate: value => {
       if (typeOf(value) !== 'number') return [typeOfError(type, value)];
@@ -203,17 +211,24 @@ function NumberType(options = {}) {
 }
 
 function BoolType(options = {}) {
-  return TypeOf('boolean', options);
+  return TypeOf('boolean', merge(options, {
+    name: 'BoolType'
+  }));
 }
 
 function NullType(options = {}) {
-  return TypeOf('null', options);
+  return TypeOf('null', merge(options, {
+    name: 'NullType'
+  }));
 }
 
 function Enum(values, options = {}) {
-  const description = `Enum(${values.join(', ')})`;
+  if (typeOf(values) !== 'array' || values.length === 0) throw new Error('Enum expects a non empty array of values as first argument');
+  assertTypeOptions(options);
+  const description = options.description || `Enum(${values.join(', ')})`;
   const type = {
-    title: 'Enum',
+    name: options.name || 'Enum',
+    title: options.title || 'Enum',
     description,
     enum: values,
     options,
@@ -231,9 +246,12 @@ function Enum(values, options = {}) {
 }
 
 function InstanceOf(klass, options = {}) {
-  const description = `InstanceOf(${klass.name})`;
+  if (empty(klass) || !klass.name || !klass.constructor) throw new Error('InstanceOf expects a class as first argument');
+  assertTypeOptions(options);
+  const description = options.description || `InstanceOf(${klass.name})`;
   const type = {
-    title: 'InstanceOf',
+    name: options.name || 'InstanceOf',
+    title: options.title || 'InstanceOf',
     description,
     arg: klass,
     options,
@@ -251,12 +269,14 @@ function InstanceOf(klass, options = {}) {
 }
 
 function TypeOf(type, options = {}) {
-  if (!['string', 'array'].includes(typeOf(type))) throw new Error(`type argument to TypeOf must be string or array but was ${typeOf(type)}`);
+  if (!['string', 'array'].includes(typeOf(type)) || empty(type)) throw new Error('TypeOf expects a non-empty string or array as first argument');
+  assertTypeOptions(options);
 
   const _type = compact({
     type: array(type).every(t => JSON_TYPES.includes(t)) ? notArray(type) : undefined,
-    title: array(type).join('|'),
-    description: `TypeOf(${type})`,
+    name: options.name || 'TypeOf',
+    title: options.title || array(type).join('|'),
+    description: options.description || `TypeOf(${type})`,
     arg: type,
     options,
     validate: value => {
@@ -272,8 +292,10 @@ function TypeOf(type, options = {}) {
 }
 
 function Validate(validate, options = {}) {
+  if (typeOf(validate) !== 'function') throw new Error('Validate expects a validation function as its first argument');
   const description = options.description || 'Validate function';
   return {
+    name: options.name || 'Validate',
     title: options.title || validate.name || 'Validate',
     description,
     options,
@@ -282,6 +304,7 @@ function Validate(validate, options = {}) {
 }
 
 function ObjectType(properties, options = {}) {
+  if (typeOf(properties) !== 'object' || properties == null) throw new Error('ObjectType expects properties object as its first argument');
   assertTypeOptions(options, {
     title: 'string',
     required: ['string'],
@@ -302,17 +325,17 @@ function ObjectType(properties, options = {}) {
     if (options.additionalProperties) description += '. Addtional keys are allowed';
   }
 
-  const title = options.title ? `${options.title} (ObjectType)` : 'ObjectType';
   const type = compact({
     type: 'object',
-    title,
-    description,
+    name: options.name || 'ObjectType',
+    title: options.title || 'ObjectType',
+    description: options.description || description,
     properties,
     additionalProperties: options.additionalProperties,
     required: options.required,
     options,
     validate: (value, path = []) => {
-      if (typeof value !== 'object') return [typeOfError(type, value, {
+      if (typeOf(value) !== 'object') return [typeOfError(type, value, {
         path
       })];
       const errors = [];
@@ -363,16 +386,36 @@ function ObjectType(properties, options = {}) {
 
 function ExactObject(properties, options = {}) {
   return ObjectType(properties, merge(options, {
+    name: 'ExactObject',
     additionalProperties: false
   }));
 }
 
 function ObjectOf(valueType, options = {}) {
   return ObjectType({}, merge(options, {
+    name: 'ObjectOf',
     patternProperties: {
       '.*': valueType
     }
   }));
+}
+
+function convertNested(properties, options = {}) {
+  if (typeOf(properties) === 'object' && typeOf(properties.validate) !== 'function') {
+    // console.log('pm debug case 1 (object)', properties)
+    return ObjectType(mapObj(properties, (k, v) => convertNested(v)), options);
+  } else if (typeOf(properties) === 'array') {
+    // console.log('pm debug case 2 (array)', properties)
+    return typeObject(properties.map(item => convertNested(item)));
+  } else {
+    // console.log('pm debug case 3 (other)', properties)
+    return typeObject(properties);
+  }
+}
+
+function NestedObject(properties, options = {}) {
+  if (typeOf(properties) !== 'object' || properties == null) throw new Error('NestedObject expects properties object as its first argument');
+  return convertNested(properties, options);
 }
 
 function ArrayType(items = 'any', options = {}) {
@@ -381,10 +424,11 @@ function ArrayType(items = 'any', options = {}) {
     minItems: 'number',
     maxItems: 'number'
   });
-  const description = `Array with ${toString(items)}`;
+  const description = options.description || `Array with ${toString(items)}`;
   const type = compact({
     type: 'array',
-    title: 'ArrayType',
+    name: options.name || 'ArrayType',
+    title: options.title || 'ArrayType',
     description,
     items: items,
     minItems: options.minItems,
@@ -432,10 +476,12 @@ function Required(type) {
 }
 
 function AllOf(types, options = {}) {
+  if (typeOf(types) !== 'array' || empty(types)) throw new Error('AllOf expects non-empty array as its first argument');
   types = types.map(typeObject);
-  const description = `AllOf(${types.map(toString).join(', ')})`;
+  const description = options.description || `AllOf(${types.map(toString).join(', ')})`;
   return {
-    title: 'AllOf',
+    name: options.name || 'AllOf',
+    title: options.title || 'AllOf',
     description,
     arg: types,
     options,
@@ -451,10 +497,12 @@ function AllOf(types, options = {}) {
 }
 
 function AnyOf(types, options = {}) {
+  if (typeOf(types) !== 'array' || empty(types)) throw new Error('AnyOf expects non-empty array as its first argument');
   types = types.map(typeObject);
-  const description = `AnyOf(${types.map(toString).join(', ')})`;
+  const description = options.description || `AnyOf(${types.map(toString).join(', ')})`;
   const type = {
-    title: 'AnyOf',
+    name: options.name || 'AnyOf',
+    title: options.title || 'AnyOf',
     description,
     arg: types,
     options,
@@ -484,6 +532,7 @@ module.exports = {
   ObjectType,
   ExactObject,
   ObjectOf,
+  NestedObject,
   ArrayType,
   Enum,
   InstanceOf,
