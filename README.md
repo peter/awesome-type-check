@@ -89,6 +89,29 @@ All built-in types take an options argument and the following options are shared
 * `description` - a description of the type, for documentation purposes
 * `isRequired` - used to indicate that the corresponding key in an object is required (equivalent to (Required)[#required])
 
+## Validating Function Arguments
+
+```javascript
+const {assertType, assertOptions, Enum} = require('awesome-type-check')
+
+function area (length, options = {}) {
+  assertType('number', length)
+  assertOptions(options, {
+    type: Enum(['square', 'circle'])
+  })
+  if (options.type === 'square') {
+    return length * length
+  } else {
+    return Math.PI * Math.pow((length/2), 2)
+  }
+}
+
+Math.round(area(5)) // => 20
+area(5, {type: 'square'}) // => 25
+Math.round(area(5, {type: 'circle'})) // => 20
+area(5, {type: 'foobar'}) // => throws /must be one of: square, circle/
+```
+
 ## Basic Types Represented as Strings
 
 Here is an example of a `typeOf` type represented as a string:

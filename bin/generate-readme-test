@@ -14,14 +14,17 @@ function extractCode (readme) {
 }
 
 function fixRequire (code) {
-  return code.replace(/require\('awesome-type-check'\)/g, "require('src/index')")
+  return code.replace(/require\('awesome-type-check'\)/g, "require('../src/index')")
 }
 
 function injectAssertions (code) {
+  const THROWS_PREFIX = 'throws '
   return code.split('\n').map(line => {
     const [value, expectedValue] = line.split(/\/\/\s*=>/).map(p => p.trim())
     if (value && expectedValue) {
-      if (expectedValue.startsWith('{')) {
+      if (expectedValue.startsWith(THROWS_PREFIX)) {
+        return `expect(() => ${value}).toThrowError(${expectedValue.substring(THROWS_PREFIX.length)})`
+      } else if (expectedValue.startsWith('{')) {
         return `{const value = ${value}; const expectedValue = ${expectedValue}; Object.entries(expectedValue).forEach(([k, v]) => expect(value[k]).toEqual(v))}`
       } else {
         return `expect(${value}).toEqual(${expectedValue})`

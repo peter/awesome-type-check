@@ -65,8 +65,12 @@ function isValid (type, value) {
 function assertType (type, value) {
   const errors = typeErrors(type, value)
   if (errors) {
-    throw new TypeError(type, value, `value has invalid type - there are ${errors.length} type errors`, {childErrors: errors})
+    throw new TypeError(type, value, `value has invalid type - there are ${errors.length} type errors: ${array(errors).map(e => e.message).join(', ')}`, {childErrors: errors})
   }
+}
+
+function assertOptions (options, validOptions) {
+  assertType(ObjectType(validOptions), options)
 }
 
 function assertTypeOptions (options, validOptionTypes = {}) {
@@ -403,6 +407,7 @@ module.exports = {
   typeErrors,
   isValid,
   assertType,
+  assertOptions,
   typeObject,
   StringType,
   NumberType,

@@ -1,10 +1,10 @@
 {
   "name": "awesome-type-check",
-  "version": "0.0.17",
+  "version": "0.0.18",
   "description": "Runtime type checks / schema validation for JavaScript objects and values.",
   "main": "src/index.js",
   "scripts": {
-    "test": "bin/generate-readme-test && NOTE_PATH=. jest"
+    "test": "bin/generate-readme-test && jest"
   },
   "repository": {
     "type": "git",
