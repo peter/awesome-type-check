@@ -53,7 +53,7 @@ function typeErrors (type, value, path = []) {
       return error
     } else {
       return new TypeError(type, value, result, {path})
-    }  
+    }
   })
 }
 
@@ -231,7 +231,7 @@ function Validate (validate, options = {}) {
 }
 
 function ObjectType (properties, options = {}) {
-  if (typeOf(properties) !== 'object' || properties == null) throw new Error('ObjectType expects properties object as its first argument') 
+  if (typeOf(properties) !== 'object' || properties == null) throw new Error('ObjectType expects properties object as its first argument')
   assertTypeOptions(options, {title: 'string', required: ['string'], additionalProperties: 'boolean', patternProperties: 'object'})
   properties = mapObj(properties, (k, v) => typeObject(v))
   const keysMarkedRequired = Object.keys(properties).filter(key => getIn(typeObject(properties[key]), 'options.isRequired') === true)
@@ -318,7 +318,7 @@ function convertNested (properties, options = {}) {
 }
 
 function NestedObject (properties, options = {}) {
-  if (typeOf(properties) !== 'object' || properties == null) throw new Error('NestedObject expects properties object as its first argument') 
+  if (typeOf(properties) !== 'object' || properties == null) throw new Error('NestedObject expects properties object as its first argument')
   return convertNested(properties, options)
 }
 
@@ -403,6 +403,7 @@ function AnyOf (types, options = {}) {
 }
 
 module.exports = {
+  typeOf,
   TypeError,
   typeErrors,
   isValid,

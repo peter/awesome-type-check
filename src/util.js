@@ -114,10 +114,11 @@ function mapObj (obj, valueTransform) {
 function typeOf (value) {
   if (value === null) return 'null'
   if (value === undefined) return 'undefined'
+  if (typeof value === 'number' && isNaN(value)) return 'NaN'
   if (isArray(value)) return 'array'
-  if (value instanceof Date) return 'date';
-  if (value instanceof Error) return 'error';
-  if (value instanceof RegExp) return 'regexp';
+  if (value instanceof Date) return 'date'
+  if (value instanceof Error) return 'error'
+  if (value instanceof RegExp) return 'regexp'
   return typeof value
 }
 
