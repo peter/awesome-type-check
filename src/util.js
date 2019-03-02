@@ -115,6 +115,7 @@ function typeOf (value) {
   if (value === null) return 'null'
   if (value === undefined) return 'undefined'
   if (typeof value === 'number' && isNaN(value)) return 'NaN'
+  if (value === Infinity) return "Infinity";
   if (isArray(value)) return 'array'
   if (value instanceof Date) return 'date'
   if (value instanceof Error) return 'error'
