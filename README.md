@@ -87,7 +87,7 @@ All built-in types take an options argument and the following options are shared
 
 * `title` - the name of the type, for documentation purposes
 * `description` - a description of the type, for documentation purposes
-* `isRequired` - used to indicate that the corresponding key in an object is required (equivalent to [Required](#required])
+* `isRequired` - used to indicate that the corresponding key in an object is required (equivalent to [Required](#required))
 
 ## Validating Function Arguments
 
